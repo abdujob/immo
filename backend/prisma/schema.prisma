@@ -1,0 +1,192 @@
+// Prisma Schema - Plateforme Immobilière Sénégalaise
+// learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS & AUTHENTICATION
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  phone     String?
+  firstName String?
+  lastName  String?
+  role      String   @default("INDIVIDUAL") // INDIVIDUAL, AGENCY_AGENT, ADMIN
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  agencyId      String?
+  agency        Agency?    @relation(fields: [agencyId], references: [id])
+  properties    Property[] // Properties owned by this user
+  favorites     Favorite[]
+  contactsSent  Contact[]  @relation("ContactSender")
+  reviews       Review[]
+  notifications Notification[]
+}
+
+// ============================================
+// AGENCIES
+// ============================================
+
+model Agency {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  address     String
+  city        String
+  phone       String
+  email       String
+  logo        String?
+  website     String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  agents     User[]
+  properties Property[]
+  reviews    Review[]
+}
+
+// ============================================
+// PROPERTIES
+// ============================================
+
+model Property {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  
+  // Type & Transaction
+  type            String   // APPARTEMENT, MAISON, VILLA, TERRAIN, BUREAU, COMMERCE, STUDIO, DUPLEX
+  transactionType String   // VENTE, LOCATION
+  
+  // Price & Details
+  price           Float
+  surface         Float    // in m²
+  rooms           Int?     // Total rooms
+  bedrooms        Int?
+  bathrooms       Int?
+  floor           Int?
+  
+  // Features
+  hasGarden       Boolean  @default(false)
+  hasParking      Boolean  @default(false)
+  hasPool         Boolean  @default(false)
+  isFurnished     Boolean  @default(false)
+  hasAirCon       Boolean  @default(false)
+  hasGuardian     Boolean  @default(false)
+  
+  // Location
+  address         String
+  city            String
+  district        String?  // Quartier
+  lat             Float?
+  lng             Float?
+  
+  // Media (stored as JSON string array)
+  images          String?  // JSON array of image paths
+  virtualTourUrl  String?
+  
+  // Status
+  status          String   @default("ACTIVE") // ACTIVE, PENDING, SOLD, RENTED, INACTIVE
+  featured        Boolean  @default(false)
+  verified        Boolean  @default(false)
+  views           Int      @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  ownerId         String
+  owner           User     @relation(fields: [ownerId], references: [id])
+  agencyId        String?
+  agency          Agency?  @relation(fields: [agencyId], references: [id])
+  
+  favorites       Favorite[]
+  contacts        Contact[]
+  reviews         Review[]
+}
+
+// ============================================
+// FAVORITES
+// ============================================
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+
+// ============================================
+// CONTACTS / INQUIRIES
+// ============================================
+
+model Contact {
+  id         String   @id @default(uuid())
+  message    String
+  phone      String?
+  email      String?
+  status     String   @default("PENDING") // PENDING, CONTACTED, CLOSED
+  createdAt  DateTime @default(now())
+  
+  // Relations
+  senderId   String
+  sender     User     @relation("ContactSender", fields: [senderId], references: [id])
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// REVIEWS
+// ============================================
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int      // 1-5
+  comment    String?
+  targetType String   // PROPERTY, AGENCY
+  createdAt  DateTime @default(now())
+  
+  // Relations
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  agencyId   String?
+  agency     Agency?   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // CONTACT | FAVORITE | REVIEW | PROPERTY_STATUS
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
