@@ -29,7 +29,7 @@ const formSchema = z.object({
     lastName: z.string().min(2, { message: "Nom requis." }),
     phone: z.string().min(9, { message: "Numéro invalide." }),
     role: z.enum(["INDIVIDUAL", "AGENCY_AGENT"], {
-        required_error: "Vous devez choisir un type de compte.",
+        message: "Vous devez choisir un type de compte.",
     }),
 });
 

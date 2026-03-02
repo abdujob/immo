@@ -45,6 +45,9 @@ export interface Property {
         phone: string;
         email: string;
     };
+    _count?: {
+        favorites?: number;
+    };
 }
 
 export interface Agency {
