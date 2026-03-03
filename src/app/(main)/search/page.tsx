@@ -1,31 +1,30 @@
-
 "use client";
 
-import { HairdresserCard } from "@/components/search/HairdresserCard";
+import { PropertyCard } from "@/components/property/PropertyCard";
 import { MapView } from "@/components/search/MapView";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { searchProperties, Property } from "@/lib/api";
 
 function SearchContent() {
     const searchParams = useSearchParams();
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchResults = async () => {
             setLoading(true);
             try {
-                const params = new URLSearchParams();
-                const q = searchParams.get("q");
-                const type = searchParams.get("type");
-                if (q) params.append("q", q);
-                if (type) params.append("type", type);
-                const res = await fetch(`http://localhost:4000/coiffeurs/search?${params.toString()}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setResults(data);
-                }
+                const q = searchParams.get("q") || undefined;
+                const type = searchParams.get("type") || undefined;
+
+                const data = await searchProperties({
+                    city: q,
+                    propertyType: type
+                });
+
+                setResults(data);
             } catch (error) {
                 console.error("Failed to fetch", error);
             } finally {
@@ -38,7 +37,7 @@ function SearchContent() {
     return (
         <div className="flex h-[calc(100vh-64px)] overflow-hidden">
             <div className="w-full lg:w-1/2 h-full overflow-y-auto p-4 lg:p-6 scrollbar-thin">
-                <h1 className="text-2xl font-bold mb-6">Coiffeurs à proximité</h1>
+                <h1 className="text-2xl font-bold mb-6">Biens immobiliers à proximité</h1>
                 {loading ? (
                     <div className="flex justify-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -46,27 +45,12 @@ function SearchContent() {
                 ) : (
                     <div className="flex flex-col gap-6">
                         {results.length === 0 ? (
-                            <p className="text-muted-foreground text-center py-10">Aucun coiffeur trouvé.</p>
+                            <p className="text-muted-foreground text-center py-10">Aucun bien immobilier trouvé.</p>
                         ) : (
                             results.map((pro) => (
-                                <HairdresserCard
+                                <PropertyCard
                                     key={pro.id}
-                                    hairdresser={{
-                                        id: pro.id,
-                                        name: pro.firstName ? `${pro.firstName} ${pro.lastName}` : "Coiffeur sans nom",
-                                        neighborhood: pro.city || "Ville inconnue",
-                                        rating: 0,
-                                        reviewCount: 0,
-                                        startingPrice: 0,
-                                        images: [
-                                            "https://placehold.co/600x400/png?text=Salon+Photo",
-                                            "https://placehold.co/600x400/png?text=Coupe+H",
-                                            "https://placehold.co/600x400/png?text=Coupe+F",
-                                        ],
-                                        isSalon: pro.type === "SALON",
-                                        isHome: pro.type === "DOMICILE",
-                                        isAvailableToday: true,
-                                    }}
+                                    property={pro as any}
                                 />
                             ))
                         )}

@@ -79,90 +79,134 @@ export interface SearchFilters {
     hasPool?: boolean;
 }
 
+const mockProperties: Property[] = [
+    {
+        id: "prop-1",
+        title: "Villa de Luxe avec Vue sur l'Océan",
+        description: "Magnifique villa moderne située sur la Corniche des Almadies. Profitez d'une piscine à débordement et d'un espace de vie exceptionnel.",
+        type: "VILLA",
+        transactionType: "VENTE",
+        price: 450000000,
+        surface: 600,
+        rooms: 8,
+        bedrooms: 5,
+        bathrooms: 4,
+        hasGarden: true,
+        hasParking: true,
+        hasPool: true,
+        isFurnished: true,
+        hasAirCon: true,
+        hasGuardian: true,
+        address: "Route des Almadies",
+        city: "Dakar",
+        district: "Almadies",
+        images: JSON.stringify([
+            "https://images.unsplash.com/photo-1613490901591-8ac9fcdcc279?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
+        ]),
+        status: "ACTIVE",
+        featured: true,
+        verified: true,
+        views: 1250,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        owner: { id: "user-1", firstName: "Jean", lastName: "Dupont", email: "jean@example.com" },
+        _count: { favorites: 42 }
+    },
+    {
+        id: "prop-2",
+        title: "Appartement Premium F4 Plateau",
+        description: "Très bel appartement refait à neuf en plein cœur de Dakar Plateau, proche de toutes commodités et ambassades.",
+        type: "APPARTEMENT",
+        transactionType: "LOCATION",
+        price: 1500000,
+        surface: 180,
+        rooms: 4,
+        bedrooms: 3,
+        bathrooms: 2,
+        hasGarden: false,
+        hasParking: true,
+        hasPool: false,
+        isFurnished: false,
+        hasAirCon: true,
+        hasGuardian: true,
+        address: "Rue Félix Faure",
+        city: "Dakar",
+        district: "Plateau",
+        images: JSON.stringify([
+            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1502672260266-1c1c9b2cb46a?auto=format&fit=crop&q=80"
+        ]),
+        status: "ACTIVE",
+        featured: true,
+        verified: true,
+        views: 890,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        owner: { id: "user-2", firstName: "Fatou", lastName: "Diop", email: "fatou@example.com" },
+        _count: { favorites: 15 }
+    },
+    {
+        id: "prop-3",
+        title: "Maison Familiale avec Jardin à Ngor",
+        description: "Idéale pour une famille, cette maison spacieuse offre un grand jardin fleuri et un cadre de vie calme.",
+        type: "MAISON",
+        transactionType: "VENTE",
+        price: 210000000,
+        surface: 350,
+        rooms: 6,
+        bedrooms: 4,
+        bathrooms: 3,
+        hasGarden: true,
+        hasParking: true,
+        hasPool: false,
+        isFurnished: false,
+        hasAirCon: true,
+        hasGuardian: false,
+        address: "Cité Ngor Almadies",
+        city: "Dakar",
+        district: "Ngor",
+        images: JSON.stringify([
+            "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?auto=format&fit=crop&q=80"
+        ]),
+        status: "ACTIVE",
+        featured: false,
+        verified: true,
+        views: 450,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        owner: { id: "user-3", firstName: "Moussa", lastName: "Sow", email: "msow@example.com" },
+        _count: { favorites: 5 }
+    }
+];
+
 /**
  * Get all properties
  */
 export async function getProperties(): Promise<Property[]> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/properties`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch properties');
-        }
-        const data = await response.json();
-        // Handle different response formats
-        if (Array.isArray(data)) {
-            return data;
-        }
-        if (data && Array.isArray(data.properties)) {
-            return data.properties;
-        }
-        if (data && Array.isArray(data.data)) {
-            return data.data;
-        }
-        console.warn('Unexpected response format:', data);
-        return [];
-    } catch (error) {
-        console.error('Error fetching properties:', error);
-        return [];
-    }
+    return Promise.resolve(mockProperties);
 }
 
 /**
  * Get a single property by ID
  */
 export async function getPropertyById(id: string): Promise<Property | null> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/properties/${id}`);
-        if (!response.ok) {
-            return null;
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(`Error fetching property ${id}:`, error);
-        return null;
-    }
+    const prop = mockProperties.find(p => p.id === id);
+    return Promise.resolve(prop || null);
 }
 
 /**
  * Search properties with filters
  */
 export async function searchProperties(filters: SearchFilters): Promise<Property[]> {
-    try {
-        const params = new URLSearchParams();
-
-        if (filters.city) params.append('city', filters.city);
-        if (filters.propertyType) params.append('type', filters.propertyType);
-        if (filters.transactionType) params.append('transactionType', filters.transactionType);
-        if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
-        if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
-        if (filters.minSurface) params.append('minSurface', filters.minSurface.toString());
-        if (filters.maxSurface) params.append('maxSurface', filters.maxSurface.toString());
-        if (filters.bedrooms) params.append('bedrooms', filters.bedrooms.toString());
-        if (filters.hasParking) params.append('hasParking', 'true');
-        if (filters.hasGarden) params.append('hasGarden', 'true');
-        if (filters.hasPool) params.append('hasPool', 'true');
-
-        const response = await fetch(`${API_BASE_URL}/search?${params.toString()}`);
-        if (!response.ok) {
-            throw new Error('Failed to search properties');
-        }
-        const data = await response.json();
-        // Handle different response formats
-        if (Array.isArray(data)) {
-            return data;
-        }
-        if (data && Array.isArray(data.properties)) {
-            return data.properties;
-        }
-        if (data && Array.isArray(data.data)) {
-            return data.data;
-        }
-        console.warn('Unexpected search response format:', data);
-        return [];
-    } catch (error) {
-        console.error('Error searching properties:', error);
-        return [];
-    }
+    // Basic mock filtering
+    let results = [...mockProperties];
+    if (filters.city) results = results.filter(p => p.city.toLowerCase() === filters.city?.toLowerCase());
+    if (filters.propertyType) results = results.filter(p => p.type === filters.propertyType);
+    if (filters.transactionType) results = results.filter(p => p.transactionType === filters.transactionType);
+    return Promise.resolve(results);
 }
 
 /**
@@ -185,28 +229,7 @@ export async function getAgencies(): Promise<Agency[]> {
  * Get featured properties
  */
 export async function getFeaturedProperties(): Promise<Property[]> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/properties?featured=true`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch featured properties');
-        }
-        const data = await response.json();
-        // Handle different response formats
-        if (Array.isArray(data)) {
-            return data;
-        }
-        if (data && Array.isArray(data.properties)) {
-            return data.properties;
-        }
-        if (data && Array.isArray(data.data)) {
-            return data.data;
-        }
-        console.warn('Unexpected featured properties response format:', data);
-        return [];
-    } catch (error) {
-        console.error('Error fetching featured properties:', error);
-        return [];
-    }
+    return Promise.resolve(mockProperties.filter(p => p.featured));
 }
 
 /**
