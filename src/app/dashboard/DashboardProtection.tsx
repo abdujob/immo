@@ -8,9 +8,8 @@ export default function DashboardProtection({ children }: { children: React.Reac
 
     useEffect(() => {
         const user = localStorage.getItem('user');
-        const user = localStorage.getItem('user');
 
-        if (!user || !user) {
+        if (!user) {
             router.push('/auth/login');
             return;
         }
