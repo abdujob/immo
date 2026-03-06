@@ -13,10 +13,11 @@ export class AuthController {
     @UsePipes(ZodValidationPipe)
     async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
         const result = await this.authService.register(dto);
+        const isProd = process.env.NODE_ENV === 'production';
         res.cookie('access_token', result.access_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000,
         });
         return result;
@@ -26,10 +27,11 @@ export class AuthController {
     @UsePipes(ZodValidationPipe)
     async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
         const result = await this.authService.login(dto);
+        const isProd = process.env.NODE_ENV === 'production';
         res.cookie('access_token', result.access_token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000,
         });
         return result;
@@ -37,10 +39,11 @@ export class AuthController {
 
     @Post('logout')
     async logout(@Res({ passthrough: true }) res: Response) {
+        const isProd = process.env.NODE_ENV === 'production';
         res.clearCookie('access_token', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax',
         });
         return { message: 'Logged out successfully' };
     }
