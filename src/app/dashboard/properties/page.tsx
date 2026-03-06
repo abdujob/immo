@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +15,18 @@ import {
     MapPin
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { Property, parseImages, formatPrice } from "@/lib/api";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/use-toast";
+import { Property, parseImages, formatPrice, getMyProperties, updatePropertyStatus, updatePropertyFeatured } from "@/lib/api";
 
 export default function MyPropertiesPage() {
+    const { toast } = useToast();
     const [properties, setProperties] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,22 +37,13 @@ export default function MyPropertiesPage() {
     const loadMyProperties = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            const data = await getMyProperties();
+            // If not authenticated, getMyProperties returns [] and we redirect
+            if (data.length === 0 && !localStorage.getItem('token')) {
                 window.location.href = '/auth/login';
                 return;
             }
-
-            const response = await fetch('http://localhost:4000/properties/my-properties', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setProperties(data);
-            }
+            setProperties(data);
         } catch (error) {
             console.error('Error loading properties:', error);
         } finally {
@@ -52,24 +52,42 @@ export default function MyPropertiesPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
-            return;
-        }
-
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) return;
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:4000/properties/${id}`, {
+            const user = localStorage.getItem('user');
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+            const response = await fetch(`${API_URL}/properties/${id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+                credentials: 'include',
             });
-
             if (response.ok) {
                 setProperties(prev => prev.filter(p => p.id !== id));
+                toast({ title: "Succès", description: "L'annonce a été supprimée." });
             }
         } catch (error) {
             console.error('Error deleting property:', error);
+            toast({ title: "Erreur", description: "Impossible de supprimer l'annonce.", variant: "destructive" });
+        }
+    };
+
+    const handleStatusChange = async (id: string, newStatus: string) => {
+        const success = await updatePropertyStatus(id, newStatus);
+        if (success) {
+            setProperties(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
+            toast({ title: "Statut mis à jour", description: `L'annonce est maintenant ${newStatus}.` });
+        } else {
+            toast({ title: "Erreur", description: "Impossible de changer le statut.", variant: "destructive" });
+        }
+    };
+
+    const handleFeaturedToggle = async (id: string, currentlyFeatured: boolean) => {
+        const newFeatured = !currentlyFeatured;
+        const success = await updatePropertyFeatured(id, newFeatured);
+        if (success) {
+            setProperties(prev => prev.map(p => p.id === id ? { ...p, featured: newFeatured } : p));
+            toast({ title: "Mise en vedette modifiée", description: newFeatured ? "Annonce mise en vedette." : "Mise en vedette retirée." });
+        } else {
+            toast({ title: "Erreur", description: "Impossible de modifier la mise en vedette.", variant: "destructive" });
         }
     };
 
@@ -125,30 +143,7 @@ export default function MyPropertiesPage() {
             ) : (
                 <div className="space-y-4">
                     {properties.map((property) => {
-                        // Robust image parsing with API URL prefix
-                        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-                        let images: string[] = [];
-
-                        try {
-                            let rawImages: string[] = [];
-                            if (Array.isArray(property.images)) {
-                                // @ts-ignore
-                                rawImages = property.images;
-                            } else {
-                                rawImages = parseImages(property.images);
-                            }
-
-                            // Ensure all images have the correct prefix
-                            images = rawImages.map((img: string) => {
-                                if (img.startsWith('/uploads')) {
-                                    return img.startsWith('http') ? img : `${API_URL}${img}`;
-                                }
-                                return img;
-                            });
-                        } catch (e) {
-                            console.error("Image parsing error", e);
-                            images = ['/placeholder-property.svg'];
-                        }
+                        const images = parseImages(property.images);
                         const mainImage = images[0] || '/placeholder-property.svg';
 
                         return (
@@ -172,8 +167,8 @@ export default function MyPropertiesPage() {
                                         <div className="flex-1 p-6">
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="flex-1">
-                                                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                                        {property.title}
+                                                    <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center justify-between">
+                                                        <span>{property.title}</span>
                                                     </h3>
                                                     <div className="flex items-center text-gray-600 text-sm mb-3">
                                                         <MapPin className="w-4 h-4 mr-1" />
@@ -188,20 +183,55 @@ export default function MyPropertiesPage() {
                                                 </div>
 
                                                 {/* Actions */}
-                                                <div className="flex gap-2">
-                                                    <Link href={`/properties/${property.id}/edit`}>
-                                                        <Button variant="outline" size="icon">
-                                                            <Edit className="w-4 h-4" />
+                                                <div className="flex flex-col gap-2 items-end">
+                                                    <div className="flex gap-2">
+                                                        <Link href={`/properties/${property.id}/edit`}>
+                                                            <Button variant="outline" size="icon" title="Modifier">
+                                                                <Edit className="w-4 h-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="outline" size="icon" title="Statut">
+                                                                    <MoreVertical className="w-4 h-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(property.id, 'ACTIVE')}>Actif</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(property.id, 'SOLD')}>Vendu</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(property.id, 'RENTED')}>Loué</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleStatusChange(property.id, 'INACTIVE')}>Inactif</DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            onClick={() => handleDelete(property.id)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            title="Supprimer"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
                                                         </Button>
-                                                    </Link>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() => handleDelete(property.id)}
-                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between mb-4 border-b pb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-sm font-semibold px-2 py-1 rounded border 
+                                                        ${property.status === 'ACTIVE' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                            property.status === 'SOLD' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                                property.status === 'RENTED' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                                    'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                                                        {property.status}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-medium text-gray-600 text-right">Vedette</span>
+                                                    <Switch
+                                                        checked={property.featured}
+                                                        onCheckedChange={() => handleFeaturedToggle(property.id, property.featured)}
+                                                    />
                                                 </div>
                                             </div>
 

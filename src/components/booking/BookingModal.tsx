@@ -60,8 +60,8 @@ export function BookingModal({ isOpen, onClose, coiffeur, selectedServices, tota
         setIsSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            const user = localStorage.getItem('user');
+            if (!user) {
                 alert("Vous devez être connecté pour réserver.");
                 router.push('/auth/login');
                 return;
@@ -71,7 +71,7 @@ export function BookingModal({ isOpen, onClose, coiffeur, selectedServices, tota
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    
                 },
                 body: JSON.stringify({
                     coiffeurId: coiffeur.id,

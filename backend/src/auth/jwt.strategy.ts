@@ -2,14 +2,26 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { Request } from 'express';
+
+const cookieExtractor = (req: Request): string | null => {
+    let token: string | null = null;
+    if (req && req.cookies) {
+        token = req.cookies['access_token'] as string | undefined ?? null;
+    }
+    if (!token && req.headers.authorization) {
+        token = ExtractJwt.fromAuthHeaderAsBearerToken()(req) as string | null;
+    }
+    return token;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(private prisma: PrismaService) {
         super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: cookieExtractor,
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET || 'super_secret', // Use env in prod
+            secretOrKey: process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET is missing from environment'); })(),
         });
     }
 

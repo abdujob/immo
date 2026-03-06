@@ -12,6 +12,7 @@ import {
     UsePipes,
     UseInterceptors,
     UploadedFiles,
+    BadRequestException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { PropertyService } from './property.service';
@@ -26,7 +27,10 @@ import {
     PropertyFilterSchema,
 } from './property.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { ZodError } from 'zod';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { multerConfig } from '../config/multer.config';
 
@@ -36,7 +40,8 @@ export class PropertyController {
     constructor(private readonly propertyService: PropertyService) { }
 
     @Post()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('AGENCY_AGENT', 'ADMIN', 'INDIVIDUAL')
     @ApiBearerAuth()
     @UseInterceptors(FileFieldsInterceptor([{ name: 'images', maxCount: 10 }], multerConfig))
     @ApiOperation({ summary: 'Créer une nouvelle propriété' })
@@ -46,7 +51,7 @@ export class PropertyController {
         @UploadedFiles() files: { images?: Express.Multer.File[] }
     ) {
         // Convert string booleans to actual booleans
-        const createPropertyDto: any = {
+        const parsedBody: any = {
             ...body,
             price: parseFloat(body.price),
             surface: parseFloat(body.surface),
@@ -60,12 +65,22 @@ export class PropertyController {
             hasGuardian: body.hasGuardian === 'true' || body.hasGuardian === true,
         };
 
-        // Add image paths
-        if (files?.images) {
-            createPropertyDto.images = files.images.map(file => `/uploads/${file.filename}`);
-        }
+        try {
+            const createPropertyDto = CreatePropertySchema.parse(parsedBody);
 
-        return this.propertyService.create(req.user.id, createPropertyDto);
+            const finalDto: any = { ...createPropertyDto };
+            // Add image paths
+            if (files?.images) {
+                finalDto.images = files.images.map(file => `/uploads/${file.filename}`);
+            }
+
+            return this.propertyService.create(req.user.id, finalDto);
+        } catch (error) {
+            if (error instanceof ZodError) {
+                throw new BadRequestException({ message: 'Validation failed', errors: (error as any).issues });
+            }
+            throw error;
+        }
     }
 
     @Get()
@@ -108,7 +123,8 @@ export class PropertyController {
     }
 
     @Patch(':id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('AGENCY_AGENT', 'ADMIN', 'INDIVIDUAL')
     @ApiBearerAuth()
     @UseInterceptors(FileFieldsInterceptor([{ name: 'images', maxCount: 10 }], multerConfig))
     @ApiOperation({ summary: 'Mettre à jour une propriété' })
@@ -130,39 +146,44 @@ export class PropertyController {
             if (field in body) updateData[field] = body[field] === 'true' || body[field] === true;
         });
 
-        // Handle images
-        let images: string[] = [];
-        if (body.existingImages) {
-            images = Array.isArray(body.existingImages) ? body.existingImages : [body.existingImages];
+        try {
+            const updatePropertyDto = UpdatePropertySchema.parse(updateData);
+            const finalUpdateData: any = { ...updatePropertyDto };
+
+            // Handle images
+            let images: string[] = [];
+            if (body.existingImages) {
+                images = Array.isArray(body.existingImages) ? body.existingImages : [body.existingImages];
+            }
+
+            if (files?.images) {
+                const newImages = files.images.map(file => `/uploads/${file.filename}`);
+                images = [...images, ...newImages];
+            }
+
+            if (images.length > 0 || (files?.images && files.images.length > 0)) {
+                finalUpdateData.images = JSON.stringify(images);
+            } else if (body.existingImages && Array.isArray(body.existingImages) && body.existingImages.length === 0) {
+                finalUpdateData.images = JSON.stringify([]);
+            }
+
+            return this.propertyService.update(
+                id,
+                req.user.id,
+                req.user.role,
+                finalUpdateData,
+            );
+        } catch (error) {
+            if (error instanceof ZodError) {
+                throw new BadRequestException({ message: 'Validation failed', errors: (error as any).issues });
+            }
+            throw error;
         }
-
-        console.log('Update Body:', body);
-        console.log('Update Files:', files);
-
-        if (files?.images) {
-            const newImages = files.images.map(file => `/uploads/${file.filename}`);
-            images = [...images, ...newImages];
-        }
-
-        if (images.length > 0 || (files?.images && files.images.length > 0)) {
-            updateData.images = JSON.stringify(images);
-        } else if (body.existingImages && Array.isArray(body.existingImages) && body.existingImages.length === 0) {
-            // Cas où toutes les images ont été supprimées
-            updateData.images = JSON.stringify([]);
-        }
-
-        delete updateData.existingImages;
-
-        return this.propertyService.update(
-            id,
-            req.user.id,
-            req.user.role,
-            updateData,
-        );
     }
 
     @Delete(':id')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('AGENCY_AGENT', 'ADMIN', 'INDIVIDUAL')
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Supprimer une propriété' })
     remove(@Param('id') id: string, @Request() req) {

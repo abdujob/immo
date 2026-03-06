@@ -12,12 +12,14 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
+    SelectValue
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ArrowRight, Check, Upload, X, Trash2 } from "lucide-react";
 import { parseImages } from "@/lib/api";
 import Image from "next/image";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 interface PropertyFormData {
     title: string;
@@ -74,8 +76,8 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
         hasAirCon: false,
         hasGuardian: false,
         images: [],
-        existingImages: [],
-    });
+        existingImages: []
+});
 
     useEffect(() => {
         loadProperty();
@@ -83,15 +85,15 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
 
     const loadProperty = async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            const user = localStorage.getItem('user');
+            if (!user) {
                 router.push('/auth/login');
                 return;
             }
 
-            const response = await fetch(`http://localhost:4000/properties/${params.id}`, {
+            const response = await fetch(`${API_BASE_URL}/properties/${params.id}`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    
                 }
             });
 
@@ -120,8 +122,8 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
                     hasAirCon: property.hasAirCon,
                     hasGuardian: property.hasGuardian,
                     images: [],
-                    existingImages: existingImages,
-                });
+                    existingImages: existingImages
+});
             } else {
                 alert("Impossible de charger l'annonce");
                 router.push('/dashboard/properties');
@@ -162,8 +164,8 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
     const handleSubmit = async () => {
         setSubmitting(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            const user = localStorage.getItem('user');
+            if (!user) {
                 router.push('/auth/login');
                 return;
             }
@@ -187,11 +189,8 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
             submitData.append('hasAirCon', String(formData.hasAirCon));
             submitData.append('hasGuardian', String(formData.hasGuardian));
 
-            // Ajouter les images qui restent (URL relatives car parseImages prefixe mais on veut stocker relatif ?)
-            // Attention: parseImages ajoute le prefixe http://localhost:4000
-            // Le backend attend /uploads/xxx.webp
-            // Il faut retirer le préfixe si présent
-            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+            // Ajouter les images qui restent (URL relatives car parseImages prefixe mais on veut stocker relatif)
+            // Il faut retirer le préfixe API_BASE_URL si présent
 
             formData.existingImages.forEach((img) => {
                 let relativePath = img;
@@ -206,13 +205,13 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
                 submitData.append('images', image);
             });
 
-            const response = await fetch(`http://localhost:4000/properties/${params.id}`, {
+            const response = await fetch(`${API_BASE_URL}/properties/${params.id}`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: submitData,
-            });
+                    
+},
+                body: submitData
+});
 
             if (response.ok) {
                 router.push('/dashboard/properties');

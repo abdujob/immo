@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     eslint: {
-        // Disable ESLint during build (old hairdresser components have errors)
         ignoreDuringBuilds: true,
     },
     typescript: {
-        // Disable TypeScript type checking during build
         ignoreBuildErrors: true,
     },
     images: {
@@ -18,6 +16,11 @@ const nextConfig = {
                 protocol: 'http',
                 hostname: 'localhost',
                 port: '4000',
+            },
+            {
+                // Render backend (production)
+                protocol: 'https',
+                hostname: '*.onrender.com',
             },
         ],
     },

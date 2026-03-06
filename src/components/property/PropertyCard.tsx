@@ -45,20 +45,11 @@ interface PropertyCardProps {
 export function PropertyCard({ property, onFavoriteToggle, isFavorite = false }: PropertyCardProps) {
     const [imageError, setImageError] = useState(false);
 
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'decimal',
-            minimumFractionDigits: 0,
-        }).format(price).replace(/\s/g, ' ') + ' FCFA';
-    };
-
     const getTransactionBadgeColor = (type: string) => {
         return type === 'VENTE' ? 'bg-blue-600' : 'bg-green-600';
     };
 
     const imageArray = parseImages(property.images);
-    console.log(`Property ${property.id} images raw:`, property.images);
-    console.log(`Property ${property.id} parsed:`, imageArray);
     const mainImage = imageArray[0];
 
     return (

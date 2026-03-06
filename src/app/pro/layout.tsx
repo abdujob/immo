@@ -2,44 +2,65 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
-    Calendar,
-    Scissors,
+    Building2,
+    MessageSquare,
+    Settings,
     LogOut,
-    UserCircle
+    Home,
+    PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const MENU_ITEMS = [
     { icon: LayoutDashboard, label: "Tableau de bord", href: "/pro/dashboard" },
-    { icon: Calendar, label: "Agenda", href: "/pro/agenda" },
-    { icon: Scissors, label: "Services", href: "/pro/services" },
-    { icon: UserCircle, label: "Mon Profil", href: "/pro/settings" },
+    { icon: Home, label: "Mes annonces", href: "/pro/annonces" },
+    { icon: MessageSquare, label: "Messages", href: "/pro/messages" },
+    { icon: Settings, label: "Paramètres agence", href: "/pro/settings" },
 ];
-
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
 
 export default function ProLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const isOnboarding = pathname === "/pro/onboarding";
+    const { logout, user } = useAuth();
+    const router = useRouter();
 
+    const isOnboarding = pathname === "/pro/onboarding";
     if (isOnboarding) {
         return <div className="min-h-screen bg-gray-50">{children}</div>;
     }
 
+    const handleLogout = () => {
+        logout();
+        router.push("/");
+    };
+
     const NavContent = () => (
         <>
             <div className="flex items-center gap-2 px-2 mb-8">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold">P</div>
-                <span className="text-xl font-bold tracking-tight">Platiny Pro</span>
+                <Building2 className="h-8 w-8 text-blue-600" />
+                <div>
+                    <span className="text-lg font-bold tracking-tight text-gray-900">ImmoSénégal</span>
+                    <p className="text-xs text-gray-500">Espace Agence</p>
+                </div>
             </div>
+
+            {/* Quick action */}
+            <Link href="/properties/new" className="mb-6 block">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Publier une annonce
+                </Button>
+            </Link>
 
             <nav className="flex-1 space-y-1">
                 {MENU_ITEMS.map((item) => {
-                    const isActive = pathname === item.href;
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                     return (
                         <Link
                             key={item.href}
@@ -47,8 +68,8 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
                             className={cn(
                                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                                 isActive
-                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                    : "text-muted-foreground hover:bg-gray-100 hover:text-foreground"
+                                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                             )}
                         >
                             <item.icon className="h-4 w-4" />
@@ -59,7 +80,17 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
             </nav>
 
             <div className="border-t pt-4 mt-auto">
-                <Button variant="ghost" className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50">
+                {user && (
+                    <div className="px-3 py-2 mb-2">
+                        <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                )}
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={handleLogout}
+                >
                     <LogOut className="h-4 w-4" />
                     Déconnexion
                 </Button>
@@ -88,7 +119,7 @@ export default function ProLayout({ children }: { children: React.ReactNode }) {
                             <NavContent />
                         </SheetContent>
                     </Sheet>
-                    <span className="ml-4 font-bold text-lg">Platiny Pro</span>
+                    <span className="ml-4 font-bold text-lg">Espace Agence</span>
                 </div>
 
                 <div className="p-4 md:p-8">

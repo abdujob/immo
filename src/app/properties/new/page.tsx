@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +15,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue,
+    SelectValue
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ArrowRight, Check, Upload, X } from "lucide-react";
@@ -69,8 +72,8 @@ export default function NewPropertyPage() {
         isFurnished: false,
         hasAirCon: false,
         hasGuardian: false,
-        images: [],
-    });
+        images: []
+});
 
     const updateFormData = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -93,8 +96,8 @@ export default function NewPropertyPage() {
     const handleSubmit = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            const user = localStorage.getItem('user');
+            if (!user) {
                 router.push('/auth/login');
                 return;
             }
@@ -124,13 +127,13 @@ export default function NewPropertyPage() {
                 submitData.append('images', image);
             });
 
-            const response = await fetch('http://localhost:4000/properties', {
+            const response = await fetch(`${API_BASE_URL}/properties`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: submitData,
-            });
+                    
+},
+                body: submitData
+});
 
             if (response.ok) {
                 router.push('/dashboard/properties');
@@ -347,11 +350,12 @@ export default function NewPropertyPage() {
                         {formData.images.length > 0 && (
                             <div className="grid grid-cols-3 gap-4">
                                 {formData.images.map((image, index) => (
-                                    <div key={index} className="relative group">
-                                        <img
+                                    <div key={index} className="relative group h-32">
+                                        <Image
                                             src={URL.createObjectURL(image)}
                                             alt={`Preview ${index + 1}`}
-                                            className="w-full h-32 object-cover rounded-lg"
+                                            fill
+                                            className="object-cover rounded-lg"
                                         />
                                         <button
                                             onClick={() => removeImage(index)}
@@ -411,10 +415,10 @@ export default function NewPropertyPage() {
                                 <div className="flex flex-col items-center">
                                     <div
                                         className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${currentStep > step.id
-                                                ? 'bg-green-500 text-white'
-                                                : currentStep === step.id
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-gray-200 text-gray-600'
+                                            ? 'bg-green-500 text-white'
+                                            : currentStep === step.id
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-200 text-gray-600'
                                             }`}
                                     >
                                         {currentStep > step.id ? <Check className="w-5 h-5" /> : step.id}

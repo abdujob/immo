@@ -21,7 +21,7 @@ async function main() {
   // ============================================
   // CREATE AGENCIES
   // ============================================
-  
+
   const agencySenImmo = await prisma.agency.create({
     data: {
       name: 'SenImmo Plus',
@@ -135,7 +135,7 @@ async function main() {
       district: 'Almadies',
       lat: 14.7167,
       lng: -17.4833,
-      images: JSON.stringify(['/uploads/villa1-1.jpg', '/uploads/villa1-2.jpg', '/uploads/villa1-3.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1470&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: true,
       verified: true,
@@ -169,7 +169,7 @@ async function main() {
       district: 'Mermoz',
       lat: 14.7000,
       lng: -17.4500,
-      images: JSON.stringify(['/uploads/appt1-1.jpg', '/uploads/appt1-2.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1470&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: true,
       verified: true,
@@ -199,7 +199,7 @@ async function main() {
       district: 'Mbao',
       lat: 14.7300,
       lng: -17.3500,
-      images: JSON.stringify(['/uploads/terrain1-1.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1632&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: false,
       verified: true,
@@ -231,7 +231,7 @@ async function main() {
       district: 'Sacré-Cœur',
       lat: 14.7100,
       lng: -17.4600,
-      images: JSON.stringify(['/uploads/maison1-1.jpg', '/uploads/maison1-2.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1475&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: false,
       verified: true,
@@ -264,7 +264,7 @@ async function main() {
       district: 'Plateau',
       lat: 14.6700,
       lng: -17.4400,
-      images: JSON.stringify(['/uploads/studio1-1.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1536376072261-38c75010e6c9?q=80&w=1471&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: false,
       verified: true,
@@ -298,7 +298,7 @@ async function main() {
       district: 'Ngor',
       lat: 14.7500,
       lng: -17.5100,
-      images: JSON.stringify(['/uploads/duplex1-1.jpg', '/uploads/duplex1-2.jpg', '/uploads/duplex1-3.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?q=80&w=1470&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: true,
       verified: true,
@@ -331,7 +331,7 @@ async function main() {
       district: 'Point E',
       lat: 14.6950,
       lng: -17.4550,
-      images: JSON.stringify(['/uploads/bureau1-1.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1469&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: false,
       verified: true,
@@ -362,7 +362,7 @@ async function main() {
       district: 'HLM',
       lat: 14.7400,
       lng: -17.4700,
-      images: JSON.stringify(['/uploads/commerce1-1.jpg']),
+      images: JSON.stringify(['https://images.unsplash.com/photo-1582046427495-2acba647bf01?q=80&w=1481&auto=format&fit=crop']),
       status: 'ACTIVE',
       featured: false,
       verified: true,

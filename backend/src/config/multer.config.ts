@@ -6,7 +6,14 @@ export const multerConfig = {
     storage: diskStorage({
         destination: './uploads',
         filename: (req, file, callback) => {
-            const uniqueName = `${uuidv4()}${extname(file.originalname)}`;
+            const mimetype = file.mimetype;
+            let extension = extname(file.originalname); // Fallback
+            if (mimetype.includes('jpeg') || mimetype.includes('jpg')) extension = '.jpg';
+            else if (mimetype.includes('png')) extension = '.png';
+            else if (mimetype.includes('webp')) extension = '.webp';
+            else if (mimetype.includes('gif')) extension = '.gif';
+
+            const uniqueName = `${uuidv4()}${extension}`;
             callback(null, uniqueName);
         },
     }),

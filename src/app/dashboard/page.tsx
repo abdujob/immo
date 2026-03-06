@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Home, Eye, Heart, MessageSquare, TrendingUp } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { getMyProperties } from "@/lib/api";
 
 interface Stats {
     totalProperties: number;
@@ -12,6 +14,7 @@ interface Stats {
 }
 
 export default function DashboardPage() {
+    const { user } = useAuth();
     const [stats, setStats] = useState<Stats>({
         totalProperties: 0,
         totalViews: 0,
@@ -19,30 +22,22 @@ export default function DashboardPage() {
         totalMessages: 0,
     });
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        loadUserData();
         loadStats();
     }, []);
-
-    const loadUserData = () => {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            setUser(JSON.parse(userData));
-        }
-    };
 
     const loadStats = async () => {
         setLoading(true);
         try {
-            // TODO: Fetch real stats from API
-            // For now, using mock data
+            const properties = await getMyProperties();
+            const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0);
+            const totalFavorites = properties.reduce((sum, p) => sum + (p._count?.favorites || 0), 0);
             setStats({
-                totalProperties: 8,
-                totalViews: 1245,
-                totalFavorites: 34,
-                totalMessages: 12,
+                totalProperties: properties.length,
+                totalViews,
+                totalFavorites,
+                totalMessages: 0, // TODO: endpoint messages à venir
             });
         } catch (error) {
             console.error('Error loading stats:', error);

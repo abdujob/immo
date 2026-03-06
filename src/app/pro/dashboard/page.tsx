@@ -1,165 +1,241 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Calendar, Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Home, Eye, Heart, MessageSquare, TrendingUp,
+    PlusCircle, Building2, CheckCircle, Clock, Loader2
+} from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function ProDashboard() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+interface AgencyStats {
+    totalProperties: number;
+    activeProperties: number;
+    totalViews: number;
+    totalFavorites: number;
+    totalContacts: number;
+    agency: any | null;
+}
+
+export default function ProDashboardPage() {
+    const { user, isAuthenticated, isLoading: authLoading } = useAuth();
     const router = useRouter();
-    const [profile, setProfile] = useState<any>(null);
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<AgencyStats>({
+        totalProperties: 0,
+        activeProperties: 0,
+        totalViews: 0,
+        totalFavorites: 0,
+        totalContacts: 0,
+        agency: null,
+    });
     const [loading, setLoading] = useState(true);
+    const [recentProperties, setRecentProperties] = useState<any[]>([]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                router.push('/auth/login');
-                return;
+        if (!authLoading && !isAuthenticated) router.push('/auth/login');
+    }, [authLoading, isAuthenticated, router]);
+
+    useEffect(() => {
+        if (user) loadData();
+    }, [user]);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            // Fetch my properties
+            const propRes = await fetch(`${API_URL}/properties/my-properties`, {
+                credentials: 'include'
+            });
+            if (propRes.ok) {
+                const properties = await propRes.json();
+                const totalViews = properties.reduce((s: number, p: any) => s + (p.views || 0), 0);
+                const totalFavs = properties.reduce((s: number, p: any) => s + (p._count?.favorites || 0), 0);
+                const active = properties.filter((p: any) => p.status === 'ACTIVE').length;
+                setRecentProperties(properties.slice(0, 5));
+                setStats(prev => ({
+                    ...prev,
+                    totalProperties: properties.length,
+                    activeProperties: active,
+                    totalViews,
+                    totalFavorites: totalFavs,
+                }));
             }
 
-            try {
-                // Fetch Profile
-                const profileRes = await fetch('http://localhost:4000/coiffeurs/me', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (profileRes.ok) {
-                    const profileData = await profileRes.json();
-                    setProfile(profileData);
-                }
-
-                // Fetch Stats
-                const statsRes = await fetch('http://localhost:4000/appointments/stats', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (statsRes.ok) {
-                    const statsData = await statsRes.json();
-                    setStats(statsData);
-                }
-
-            } catch (error) {
-                console.error("Error fetching dashboard data", error);
-            } finally {
-                setLoading(false);
+            // Fetch received contacts count
+            const contactRes = await fetch(`${API_URL}/contacts/received`, {
+                credentials: 'include'
+            });
+            if (contactRes.ok) {
+                const contacts = await contactRes.json();
+                const pending = contacts.filter((c: any) => c.status === 'PENDING').length;
+                setStats(prev => ({ ...prev, totalContacts: pending }));
             }
-        };
+        } catch (err) {
+            console.error('Error loading pro dashboard:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        fetchData();
-    }, [router]);
+    if (authLoading || loading) {
+        return (
+            <div className="flex justify-center items-center py-24">
+                <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
+            </div>
+        );
+    }
 
-    if (loading) return <div className="p-8">Chargement du tableau de bord...</div>;
-    if (!profile) return <div className="p-8">Erreur de chargement. Veuillez vous reconnecter.</div>;
+    const statCards = [
+        { title: "Annonces publiées", value: stats.totalProperties, icon: Home, color: "text-blue-600", bg: "bg-blue-50" },
+        { title: "Annonces actives", value: stats.activeProperties, icon: CheckCircle, color: "text-green-600", bg: "bg-green-50" },
+        { title: "Vues totales", value: stats.totalViews.toLocaleString(), icon: Eye, color: "text-purple-600", bg: "bg-purple-50" },
+        { title: "Favoris", value: stats.totalFavorites, icon: Heart, color: "text-red-500", bg: "bg-red-50" },
+        { title: "Messages en attente", value: stats.totalContacts, icon: MessageSquare, color: "text-orange-600", bg: "bg-orange-50" },
+    ];
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
-                    <p className="text-muted-foreground">Bonjour {profile.firstName}, voici vos performances du jour.</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+                    <p className="text-gray-500 mt-1">
+                        Bienvenue, <span className="font-semibold text-gray-700">{user?.firstName} {user?.lastName}</span>
+                    </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="px-3 py-1 bg-green-50 text-green-700 border-green-200">
-                        En ligne
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                </div>
+                <Link href="/properties/new">
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Nouvelle annonce
+                    </Button>
+                </Link>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Revenus du jour</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats?.revenueToday || 0}€</div>
-                        <p className="text-xs text-muted-foreground">
-                            CA du jour
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Rendez-vous</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats?.appointmentsToday || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Aujourd'hui
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Taux de remplissage</CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">--%</div>
-                        <p className="text-xs text-muted-foreground">
-                            Non calculé
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Note Moyenne</CardTitle>
-                        <Star className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats?.rating || 0}/5</div>
-                        <p className="text-xs text-muted-foreground">
-                            Basé sur vos avis
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Charts & Activity */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                {/* Main Chart Area */}
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Aperçu des revenus</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pl-2">
-                        <div className="h-[200px] flex items-center justify-center bg-gray-50 rounded-lg border border-dashed text-muted-foreground text-sm">
-                            Graphique des revenus (À venir)
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Recent Sales/Activity */}
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Activité Récente</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-8">
-                            {stats?.recent?.length > 0 ? stats.recent.map((appt: any) => (
-                                <div key={appt.id} className="flex items-center">
-                                    <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs ring-2 ring-white">
-                                        {appt.client?.email?.[0]?.toUpperCase() || 'C'}
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {statCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <Card key={card.title} className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-5">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className={`p-2 rounded-lg ${card.bg}`}>
+                                        <Icon className={`w-5 h-5 ${card.color}`} />
                                     </div>
-                                    <div className="ml-4 space-y-1">
-                                        <p className="text-sm font-medium leading-none">{appt.client?.email}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {new Date(appt.createdAt).toLocaleTimeString()}
-                                        </p>
-                                    </div>
-                                    <div className="ml-auto font-medium text-sm">+{appt.priceTotal}€</div>
                                 </div>
-                            )) : (
-                                <p className="text-muted-foreground text-sm">Aucune activité récente.</p>
-                            )}
+                                <div className="text-2xl font-bold text-gray-900">{card.value}</div>
+                                <p className="text-sm text-gray-500 mt-1">{card.title}</p>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
+            </div>
+
+            {/* Recent Properties */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-lg">Annonces récentes</CardTitle>
+                    <Link href="/pro/annonces" className="text-sm text-blue-600 hover:underline">
+                        Voir tout
+                    </Link>
+                </CardHeader>
+                <CardContent>
+                    {recentProperties.length === 0 ? (
+                        <div className="text-center py-10 text-gray-400">
+                            <Building2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                            <p>Aucune annonce publiée</p>
+                            <Link href="/properties/new" className="mt-3 inline-block text-blue-600 text-sm hover:underline">
+                                Publier votre première annonce →
+                            </Link>
                         </div>
-                    </CardContent>
-                </Card>
+                    ) : (
+                        <div className="divide-y">
+                            {recentProperties.map((prop) => (
+                                <div key={prop.id} className="flex items-center justify-between py-3 gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <Link
+                                            href={`/properties/${prop.id}`}
+                                            className="font-medium text-gray-900 hover:text-blue-600 truncate block"
+                                        >
+                                            {prop.title}
+                                        </Link>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                                            <span>{prop.city}</span>
+                                            <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{prop.views}</span>
+                                            <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{prop._count?.favorites ?? 0}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${prop.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                                                prop.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-gray-100 text-gray-600'
+                                            }`}>
+                                            {prop.status === 'ACTIVE' ? 'Actif' : prop.status === 'PENDING' ? 'En attente' : prop.status}
+                                        </span>
+                                        <Link href={`/properties/${prop.id}/edit`} className="text-xs text-blue-600 hover:underline">
+                                            Modifier
+                                        </Link>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Link href="/pro/annonces">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+                        <CardContent className="p-5 flex items-center gap-4">
+                            <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
+                                <Home className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-gray-900">Gérer les annonces</p>
+                                <p className="text-xs text-gray-500">Modifier, supprimer, mettre en avant</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/pro/messages">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+                        <CardContent className="p-5 flex items-center gap-4">
+                            <div className="p-3 bg-orange-50 rounded-xl group-hover:bg-orange-100 transition-colors relative">
+                                <MessageSquare className="w-5 h-5 text-orange-600" />
+                                {stats.totalContacts > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                        {stats.totalContacts}
+                                    </span>
+                                )}
+                            </div>
+                            <div>
+                                <p className="font-semibold text-gray-900">Messages</p>
+                                <p className="text-xs text-gray-500">
+                                    {stats.totalContacts > 0 ? `${stats.totalContacts} non lu(s)` : 'Aucun message en attente'}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/pro/settings">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+                        <CardContent className="p-5 flex items-center gap-4">
+                            <div className="p-3 bg-purple-50 rounded-xl group-hover:bg-purple-100 transition-colors">
+                                <TrendingUp className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-gray-900">Paramètres agence</p>
+                                <p className="text-xs text-gray-500">Profil, contact, zone</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
         </div>
     );

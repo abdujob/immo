@@ -1,4 +1,4 @@
-import { getPropertyById, getProperties } from "@/lib/api";
+import { getPropertyById, getSimilarProperties } from "@/lib/api";
 import { notFound } from "next/navigation";
 import PropertyDetailClient from "./PropertyDetailClient";
 
@@ -10,15 +10,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         notFound();
     }
 
-    // Fetch similar properties (same city and type)
-    const allProperties = await getProperties();
-    const similarProperties = allProperties
-        .filter(p =>
-            p.id !== property.id &&
-            p.city === property.city &&
-            p.type === property.type
-        )
-        .slice(0, 3);
+    // Fetch similar properties from the dedicated backend endpoint
+    const similarProperties = await getSimilarProperties(property!.id, 3);
 
-    return <PropertyDetailClient property={property} similarProperties={similarProperties} />;
+    return <PropertyDetailClient property={property!} similarProperties={similarProperties} />;
 }

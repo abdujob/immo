@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { PropertyFilters } from "@/components/property/PropertyFilters";
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal } from "lucide-react";
-import { searchProperties, getProperties, type Property, type SearchFilters } from "@/lib/api";
+import { SlidersHorizontal, Loader2 } from "lucide-react";
+import { getPaginatedProperties, searchProperties, type Property, type SearchFilters } from "@/lib/api";
 import {
     Sheet,
     SheetContent,
@@ -17,41 +17,58 @@ export default function PropertiesPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState<SearchFilters>({});
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const LIMIT = 12;
 
     useEffect(() => {
         const fetchProperties = async () => {
             setLoading(true);
             try {
-                // If filters are applied, use search, otherwise get all properties
-                const hasFilters = Object.values(filters).some(v => v !== undefined && v !== '' && v !== 'all');
-                const data = hasFilters ? await searchProperties(filters) : await getProperties();
-                setProperties(data);
+                const hasFilters = Object.values(filters).some(
+                    (v) => v !== undefined && v !== '' && v !== false
+                );
+
+                if (hasFilters) {
+                    // Recherche via /search
+                    const data = await searchProperties(filters);
+                    setProperties(data);
+                    setTotal(data.length);
+                    setTotalPages(1);
+                } else {
+                    // Listing paginé via /properties
+                    const result = await getPaginatedProperties(page, LIMIT);
+                    setProperties(result.data);
+                    setTotal(result.meta.total);
+                    setTotalPages(result.meta.totalPages);
+                }
             } catch (error) {
-                console.error('Error fetching properties:', error);
+                console.error('Erreur chargement propriétés:', error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchProperties();
-    }, [filters]);
+    }, [filters, page]);
 
     const handleFilterChange = (newFilters: any) => {
-        // Convert "all" values to undefined for the API
-        const cleanedFilters: SearchFilters = {};
-        if (newFilters.city && newFilters.city !== 'all') cleanedFilters.city = newFilters.city;
-        if (newFilters.propertyType && newFilters.propertyType !== 'all') cleanedFilters.propertyType = newFilters.propertyType;
-        if (newFilters.transactionType) cleanedFilters.transactionType = newFilters.transactionType;
-        if (newFilters.minPrice) cleanedFilters.minPrice = newFilters.minPrice;
-        if (newFilters.maxPrice && newFilters.maxPrice < 1000000000) cleanedFilters.maxPrice = newFilters.maxPrice;
-        if (newFilters.minSurface) cleanedFilters.minSurface = newFilters.minSurface;
-        if (newFilters.maxSurface && newFilters.maxSurface < 1000) cleanedFilters.maxSurface = newFilters.maxSurface;
-        if (newFilters.bedrooms) cleanedFilters.bedrooms = newFilters.bedrooms;
-        if (newFilters.hasParking) cleanedFilters.hasParking = true;
-        if (newFilters.hasGarden) cleanedFilters.hasGarden = true;
-        if (newFilters.hasPool) cleanedFilters.hasPool = true;
+        const cleaned: SearchFilters = {};
+        if (newFilters.city && newFilters.city !== 'all') cleaned.city = newFilters.city;
+        if (newFilters.propertyType && newFilters.propertyType !== 'all') cleaned.propertyType = newFilters.propertyType;
+        if (newFilters.transactionType) cleaned.transactionType = newFilters.transactionType;
+        if (newFilters.minPrice) cleaned.minPrice = newFilters.minPrice;
+        if (newFilters.maxPrice && newFilters.maxPrice < 1000000000) cleaned.maxPrice = newFilters.maxPrice;
+        if (newFilters.minSurface) cleaned.minSurface = newFilters.minSurface;
+        if (newFilters.maxSurface && newFilters.maxSurface < 1000) cleaned.maxSurface = newFilters.maxSurface;
+        if (newFilters.bedrooms) cleaned.bedrooms = newFilters.bedrooms;
+        if (newFilters.hasParking) cleaned.hasParking = true;
+        if (newFilters.hasGarden) cleaned.hasGarden = true;
+        if (newFilters.hasPool) cleaned.hasPool = true;
 
-        setFilters(cleanedFilters);
+        setPage(1); // Retour en page 1 à chaque nouveau filtre
+        setFilters(cleaned);
     };
 
     return (
@@ -63,7 +80,13 @@ export default function PropertiesPage() {
                             Toutes les annonces
                         </h1>
                         <p className="text-gray-600">
-                            {properties.length} propriétés disponibles
+                            {loading ? (
+                                <span className="inline-flex items-center gap-1 text-gray-400">
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Chargement...
+                                </span>
+                            ) : (
+                                `${total} propriété${total > 1 ? 's' : ''} disponible${total > 1 ? 's' : ''}`
+                            )}
                         </p>
                     </div>
 
@@ -97,19 +120,45 @@ export default function PropertiesPage() {
                     {/* Properties Grid */}
                     <main className="flex-1">
                         {loading ? (
-                            <div className="text-center py-12">
-                                <p className="text-gray-500">Chargement...</p>
+                            <div className="flex justify-center items-center py-24">
+                                <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
                             </div>
                         ) : properties.length === 0 ? (
                             <div className="text-center py-12">
-                                <p className="text-gray-500">Aucune propriété trouvée</p>
+                                <p className="text-gray-500 text-lg">Aucune propriété trouvée</p>
+                                <p className="text-gray-400 text-sm mt-2">Essayez de modifier vos filtres</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {properties.map((property) => (
-                                    <PropertyCard key={property.id} property={property} />
-                                ))}
-                            </div>
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {properties.map((property) => (
+                                        <PropertyCard key={property.id} property={property as any} />
+                                    ))}
+                                </div>
+
+                                {/* Pagination — uniquement si pas de filtre de recherche */}
+                                {totalPages > 1 && Object.keys(filters).length === 0 && (
+                                    <div className="flex justify-center items-center gap-2 mt-10">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                            disabled={page === 1}
+                                        >
+                                            ← Précédent
+                                        </Button>
+                                        <span className="text-sm text-gray-600 px-4">
+                                            Page {page} / {totalPages}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                            disabled={page === totalPages}
+                                        >
+                                            Suivant →
+                                        </Button>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </main>
                 </div>

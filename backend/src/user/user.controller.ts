@@ -5,13 +5,17 @@ import { UserService } from './user.service';
 import { UpdateUserDto } from './user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { multerConfig } from '../config/multer.config';
+import { AgencyService } from '../agency/agency.service';
 
 @ApiTags('users')
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UserController {
-    constructor(private readonly userService: UserService) { }
+    constructor(
+        private readonly userService: UserService,
+        private readonly agencyService: AgencyService,
+    ) { }
 
     @Get('profile')
     @ApiOperation({ summary: 'Récupérer le profil de l\'utilisateur connecté' })
@@ -46,5 +50,11 @@ export class UserController {
         }
         const avatarPath = `/uploads/${file.filename}`;
         return this.userService.updateAvatar(req.user.id, avatarPath);
+    }
+
+    @Get('my-agency')
+    @ApiOperation({ summary: 'Obtenir l\'agence de l\'utilisateur connecté' })
+    getMyAgency(@Request() req) {
+        return this.agencyService.findByAgentId(req.user.userId);
     }
 }

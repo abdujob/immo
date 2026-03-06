@@ -1,376 +1,349 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-    Clock,
-    MapPin,
-    Upload,
-    Save,
-    Image as ImageIcon,
-    Loader2
+    Building2, Phone, Mail, Globe, MapPin, Camera,
+    Save, Loader2, CheckCircle
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 
-const DAYS_MAP: { [key: string]: string } = {
-    MONDAY: 'Lundi',
-    TUESDAY: 'Mardi',
-    WEDNESDAY: 'Mercredi',
-    THURSDAY: 'Jeudi',
-    FRIDAY: 'Vendredi',
-    SATURDAY: 'Samedi',
-    SUNDAY: 'Dimanche'
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-const REVERSE_DAYS_MAP: { [key: string]: string } = {
-    'Lundi': 'MONDAY',
-    'Mardi': 'TUESDAY',
-    'Mercredi': 'WEDNESDAY',
-    'Jeudi': 'THURSDAY',
-    'Vendredi': 'FRIDAY',
-    'Samedi': 'SATURDAY',
-    'Dimanche': 'SUNDAY'
-};
+interface AgencyData {
+    id: string;
+    name: string;
+    description: string;
+    address: string;
+    city: string;
+    phone: string;
+    email: string;
+    website: string;
+    logo?: string;
+    verified: boolean;
+}
 
-export default function SettingsPage() {
+export default function ProSettingsPage() {
+    const { user, isAuthenticated, isLoading: authLoading, refreshUser } = useAuth();
     const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [fetching, setFetching] = useState(true);
+    const { toast } = useToast();
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
-    // Profile State
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [bio, setBio] = useState("");
-    const [experienceYears, setExperienceYears] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [agency, setAgency] = useState<AgencyData | null>(null);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
-    // Schedule State
-    // Default structure, will be overwritten by fetch
-    const [schedule, setSchedule] = useState<{ [day: string]: { start: string, end: string, open: boolean } }>({
-        MONDAY: { start: '09:00', end: '19:00', open: true },
-        TUESDAY: { start: '09:00', end: '19:00', open: true },
-        WEDNESDAY: { start: '09:00', end: '19:00', open: true },
-        THURSDAY: { start: '09:00', end: '19:00', open: true },
-        FRIDAY: { start: '09:00', end: '19:00', open: true },
-        SATURDAY: { start: '09:00', end: '19:00', open: true },
-        SUNDAY: { start: '09:00', end: '19:00', open: false },
-    });
+    // Personal profile form
+    const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', phone: '' });
 
     useEffect(() => {
-        const loadData = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return router.push('/auth/login');
+        if (!authLoading && !isAuthenticated) router.push('/auth/login');
+    }, [authLoading, isAuthenticated, router]);
 
-            try {
-                // 1. Fetch Profile
-                const profileRes = await fetch('http://localhost:4000/coiffeurs/me', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (profileRes.ok) {
-                    const p = await profileRes.json();
-                    setFirstName(p.firstName || "");
-                    setLastName(p.lastName || "");
-                    setBio(p.bio || "");
-                    setExperienceYears(p.experienceYears || 0);
-                }
+    useEffect(() => {
+        if (user) {
+            setProfileForm({ firstName: user.firstName || '', lastName: user.lastName || '', phone: user.phone || '' });
+        }
+    }, [user]);
 
-                // 2. Fetch Availability
-                const availRes = await fetch('http://localhost:4000/availability/me', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (availRes.ok) {
-                    const data = await availRes.json();
-                    // Merge with existing schedule
-                    setSchedule(prev => {
-                        const next = { ...prev };
-                        data.forEach((av: any) => {
-                            if (next[av.dayOfWeek]) {
-                                next[av.dayOfWeek] = {
-                                    start: av.startTime,
-                                    end: av.endTime,
-                                    open: true
-                                };
-                            }
-                        });
-                        return next;
-                    });
-                }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setFetching(false);
-            }
-        };
-        loadData();
-    }, [router]);
+    useEffect(() => {
+        if (user) loadAgency();
+    }, [user]);
 
-
-    const onSave = async () => {
+    const loadAgency = async () => {
         setLoading(true);
-        const token = localStorage.getItem('token');
         try {
-            // 1. Update Profile
-            await fetch('http://localhost:4000/coiffeurs/profile', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    firstName,
-                    lastName,
-                    bio,
-                    experienceYears: Number(experienceYears)
-                })
+            // Try to get user's agency (if they are an AGENCY_AGENT)
+            const res = await fetch(`${API_URL}/users/my-agency`, {
+                credentials: 'include'
             });
-
-            // 2. Update Availability (One by one for now)
-            // Only update "open" days. What if we want to close a day? 
-            // The existing backend logic is "POST /availability" sets a rule.
-            // If day is closed, we probably should DELETE or just not have a rule?
-            // The backend 'setAvailability' deletes existing and creates new.
-            // If we send nothing, it stays deleted? No, setAvailability assumes we are sending a valid slot.
-            // If closed, we might need a way to say "Close". 
-            // Current backend implementation: `deleteMany` then `create`.
-            // So calling it ALWAYS deletes old one first.
-            // BUT, `create` is immediately after.
-            // So we need a way to just delete without create if closed.
-            // OR, we just define availability as "00:00"-"00:00" ? No.
-            // I'll assume for now we only send OPEN days. But how to clear a day that was previously open?
-            // Existing backend `setAvailability` requires start/end time in DTO.
-
-            // Hack for now: Only loop through OPEN days and save them.
-            // Issue: This won't remove days that were turned from Open to Closed (unless we delete them all first?).
-            // Improvement: Add a `DELETE /availability/all` or specific delete endpoint.
-            // Or just update backend to handle "isClosed" flag?
-            // Given I can't easily change backend structure completely right now without risk, I will try to save all. 
-            // If "open" is false, we technically can't use the current `setAvailability` endpoint to "Close" it (it expects valid times to CREATE).
-            // I will skip "Closed" days for now, meaning they won't update if they were already open.
-            // Valid Fix: Add query parameter or simple logic to backend? 
-            // Let's iterate: For each day in schedule:
-            // If OPEN: call setAvailability.
-            // If CLOSED: we need to delete. 
-            // I don't have a specific delete endpoint for day.
-            // I will proceed with just saving Profile and Open days for the MVP.
-
-            const daysToSave = Object.entries(schedule).filter(([_, val]) => val.open);
-            for (const [day, val] of daysToSave) {
-                await fetch('http://localhost:4000/availability', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        dayOfWeek: day,
-                        startTime: val.start,
-                        endTime: val.end
-                    })
-                });
+            if (res.ok) {
+                const data = await res.json();
+                setAgency(data);
+                if (data.logo) {
+                    setLogoUrl(data.logo.startsWith('http') ? data.logo : `${API_URL}${data.logo}`);
+                }
             }
-
-            alert("Modifications enregistrées !");
-
-        } catch (e) {
-            console.error(e);
-            alert("Erreur lors de l'enregistrement");
+        } catch {
+            // User might not have an agency yet
         } finally {
             setLoading(false);
         }
     };
 
-    const updateSchedule = (day: string, field: keyof typeof schedule[string], value: any) => {
-        setSchedule(prev => ({
-            ...prev,
-            [day]: { ...prev[day], [field]: value }
-        }));
+    const saveProfile = async () => {
+        if (!user) return;
+        setSaving(true);
+        try {
+            const res = await fetch(`${API_URL}/users/profile`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify(profileForm),
+            });
+            if (!res.ok) throw new Error();
+            await refreshUser();
+            toast({ title: "✅ Profil mis à jour" });
+        } catch {
+            toast({ title: "Erreur", description: "Impossible de sauvegarder.", variant: "destructive" });
+        } finally {
+            setSaving(false);
+        }
     };
 
-    if (fetching) return <div className="p-8">Chargement...</div>;
+    const saveAgency = async () => {
+        if (!user || !agency) return;
+        setSaving(true);
+        try {
+            const res = await fetch(`${API_URL}/agencies/${agency.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                body: JSON.stringify({
+                    name: agency.name,
+                    description: agency.description,
+                    address: agency.address,
+                    city: agency.city,
+                    phone: agency.phone,
+                    email: agency.email,
+                    website: agency.website,
+                }),
+            });
+            if (!res.ok) throw new Error();
+            toast({ title: "✅ Agence mise à jour" });
+        } catch {
+            toast({ title: "Erreur", description: "Impossible de mettre à jour l'agence.", variant: "destructive" });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !token || !agency) return;
+        const fd = new FormData();
+        fd.append('logo', file);
+        try {
+            const res = await fetch(`${API_URL}/agencies/${agency.id}/logo`, {
+                method: 'PATCH',
+                credentials: 'include',
+                body: fd,
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const url = data.logo?.startsWith('http') ? data.logo : `${API_URL}${data.logo}`;
+                setLogoUrl(url);
+                toast({ title: "✅ Logo mis à jour" });
+            }
+        } catch {
+            toast({ title: "Erreur upload logo", variant: "destructive" });
+        }
+    };
+
+    if (authLoading || loading) {
+        return <div className="flex justify-center py-24"><Loader2 className="animate-spin w-8 h-8 text-blue-600" /></div>;
+    }
 
     return (
-        <div className="space-y-8 pb-10">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Paramètres</h1>
-                    <p className="text-muted-foreground">Gérez votre profil, vos horaires et votre localisation.</p>
-                </div>
-            </div>
+        <div className="space-y-6">
+            <h1 className="text-3xl font-bold text-gray-900">Paramètres</h1>
 
             <Tabs defaultValue="profile" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 max-w-md">
-                    <TabsTrigger value="profile">Profil</TabsTrigger>
-                    <TabsTrigger value="schedule">Horaires</TabsTrigger>
-                    <TabsTrigger value="location">Localisation</TabsTrigger>
+                <TabsList className="grid grid-cols-2 max-w-xs">
+                    <TabsTrigger value="profile">Mon profil</TabsTrigger>
+                    <TabsTrigger value="agency">Mon agence</TabsTrigger>
                 </TabsList>
 
-                {/* PROFILE TAB */}
-                <TabsContent value="profile" className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border shadow-sm max-w-2xl space-y-6">
-                        <div className="flex items-center gap-6">
-                            <div className="h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300 hover:border-primary cursor-pointer transition-colors group">
-                                <Upload className="h-8 w-8 text-gray-400 group-hover:text-primary" />
-                            </div>
-                            <div>
-                                <h3 className="font-semibold">Photo de profil</h3>
-                                <p className="text-sm text-muted-foreground">JPG, PNG ou GIF. Max 2MB.</p>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <Label htmlFor="firstName">Prénom</Label>
-                                <Input id="firstName" value={firstName} onChange={e => setFirstName(e.target.value)} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="lastName">Nom</Label>
-                                <Input id="lastName" value={lastName} onChange={e => setLastName(e.target.value)} />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="experience">Années d'expérience</Label>
-                            <Input id="experience" type="number" value={experienceYears} onChange={e => setExperienceYears(parseInt(e.target.value))} />
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="bio">Bio</Label>
-                            <Textarea id="bio" className="min-h-[100px]" value={bio} onChange={e => setBio(e.target.value)} />
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-lg border shadow-sm max-w-2xl space-y-6">
-                        <h3 className="font-semibold flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4" /> Portfolio
-                        </h3>
-                        <div className="grid grid-cols-3 gap-4">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="aspect-square bg-gray-100 rounded-md relative group cursor-pointer overflow-hidden">
-                                    <img src={`https://images.unsplash.com/photo-1599351431202-6e0c03e7d754?q=80&w=300&fit=crop`} alt="Portfolio" className="object-cover w-full h-full" />
+                {/* PERSONAL PROFILE */}
+                <TabsContent value="profile">
+                    <Card className="max-w-xl">
+                        <CardHeader>
+                            <CardTitle>Informations personnelles</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Prénom</Label>
+                                    <Input
+                                        value={profileForm.firstName}
+                                        onChange={e => setProfileForm(p => ({ ...p, firstName: e.target.value }))}
+                                    />
                                 </div>
-                            ))}
-                            <div className="aspect-square bg-gray-50 rounded-md border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
-                                <PlusIcon />
+                                <div className="space-y-2">
+                                    <Label>Nom</Label>
+                                    <Input
+                                        value={profileForm.lastName}
+                                        onChange={e => setProfileForm(p => ({ ...p, lastName: e.target.value }))}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                    <Input value={user?.email} className="pl-9" disabled />
+                                </div>
+                                <p className="text-xs text-gray-500">L'email ne peut pas être modifié.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Téléphone</Label>
+                                <div className="relative">
+                                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                    <Input
+                                        value={profileForm.phone}
+                                        className="pl-9"
+                                        placeholder="+221 77 000 00 00"
+                                        onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 pt-2 p-3 bg-gray-50 rounded-lg">
+                                <CheckCircle className="w-4 h-4 text-blue-500" />
+                                <span className="text-sm text-gray-600">Rôle : <strong>Agent Immobilier</strong></span>
+                            </div>
+
+                            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={saveProfile} disabled={saving}>
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                                Enregistrer
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
-                {/* SCHEDULE TAB */}
-                <TabsContent value="schedule" className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border shadow-sm max-w-2xl">
-                        <h3 className="font-semibold mb-4 flex items-center gap-2">
-                            <Clock className="h-4 w-4" /> Horaires d&apos;ouverture
-                        </h3>
-                        <div className="space-y-4">
-                            {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map((dayKey) => (
-                                <div key={dayKey} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-gray-50 rounded-md gap-3 sm:gap-0">
-                                    <div className="flex items-center justify-between w-full sm:w-auto">
-                                        <span className="w-24 font-medium">{DAYS_MAP[dayKey]}</span>
-                                        <label className="sm:hidden text-sm text-muted-foreground flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                className="rounded border-gray-300"
-                                                checked={schedule[dayKey].open}
-                                                onChange={(e) => updateSchedule(dayKey, 'open', e.target.checked)}
+                {/* AGENCY SETTINGS */}
+                <TabsContent value="agency">
+                    {!agency ? (
+                        <Card>
+                            <CardContent className="text-center py-12 text-gray-500">
+                                <Building2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                                <p className="font-medium">Aucune agence associée à votre compte.</p>
+                                <p className="text-sm mt-1">Contactez un administrateur pour rattacher votre compte à une agence.</p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="space-y-6 max-w-xl">
+                            {/* Logo */}
+                            <Card>
+                                <CardContent className="p-5 flex items-center gap-5">
+                                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 overflow-hidden">
+                                        {logoUrl ? (
+                                            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Building2 className="w-8 h-8 text-gray-300" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={handleLogoChange} />
+                                        <Button variant="outline" size="sm" onClick={() => logoInputRef.current?.click()}>
+                                            <Camera className="w-4 h-4 mr-2" />
+                                            Changer le logo
+                                        </Button>
+                                        {agency.verified && (
+                                            <div className="flex items-center gap-1 mt-2 text-xs text-green-600">
+                                                <CheckCircle className="w-3 h-3" />
+                                                Agence vérifiée
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader><CardTitle>Informations de l'agence</CardTitle></CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Nom de l'agence</Label>
+                                        <div className="relative">
+                                            <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                            <Input
+                                                value={agency.name}
+                                                className="pl-9"
+                                                onChange={e => setAgency(a => a ? { ...a, name: e.target.value } : a)}
                                             />
-                                            Ouvert
-                                        </label>
+                                        </div>
                                     </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <Input
-                                            value={schedule[dayKey].start}
-                                            onChange={(e) => updateSchedule(dayKey, 'start', e.target.value)}
-                                            className="w-20 sm:w-24 text-center"
-                                            disabled={!schedule[dayKey].open}
-                                        />
-                                        <span className="text-sm">à</span>
-                                        <Input
-                                            value={schedule[dayKey].end}
-                                            onChange={(e) => updateSchedule(dayKey, 'end', e.target.value)}
-                                            className="w-20 sm:w-24 text-center"
-                                            disabled={!schedule[dayKey].open}
+                                    <div className="space-y-2">
+                                        <Label>Description</Label>
+                                        <Textarea
+                                            value={agency.description || ''}
+                                            rows={3}
+                                            placeholder="Décrivez votre agence..."
+                                            onChange={e => setAgency(a => a ? { ...a, description: e.target.value } : a)}
                                         />
                                     </div>
-                                    <div className="hidden sm:flex items-center gap-2">
-                                        <label className="text-sm text-muted-foreground flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                className="rounded border-gray-300"
-                                                checked={schedule[dayKey].open}
-                                                onChange={(e) => updateSchedule(dayKey, 'open', e.target.checked)}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Adresse</Label>
+                                            <div className="relative">
+                                                <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    value={agency.address || ''}
+                                                    className="pl-9"
+                                                    onChange={e => setAgency(a => a ? { ...a, address: e.target.value } : a)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Ville</Label>
+                                            <Input
+                                                value={agency.city || ''}
+                                                onChange={e => setAgency(a => a ? { ...a, city: e.target.value } : a)}
                                             />
-                                            Ouvert
-                                        </label>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Téléphone</Label>
+                                            <div className="relative">
+                                                <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    value={agency.phone || ''}
+                                                    className="pl-9"
+                                                    onChange={e => setAgency(a => a ? { ...a, phone: e.target.value } : a)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Email</Label>
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    value={agency.email || ''}
+                                                    className="pl-9"
+                                                    onChange={e => setAgency(a => a ? { ...a, email: e.target.value } : a)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Site web</Label>
+                                        <div className="relative">
+                                            <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                            <Input
+                                                value={agency.website || ''}
+                                                className="pl-9"
+                                                placeholder="https://monagence.sn"
+                                                onChange={e => setAgency(a => a ? { ...a, website: e.target.value } : a)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={saveAgency} disabled={saving}>
+                                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                                        Enregistrer les modifications
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         </div>
-                    </div>
-                </TabsContent>
-
-                {/* LOCATION TAB */}
-                <TabsContent value="location" className="space-y-6">
-                    <div className="bg-white p-6 rounded-lg border shadow-sm max-w-2xl space-y-6">
-                        <h3 className="font-semibold flex items-center gap-2">
-                            <MapPin className="h-4 w-4" /> Zone d&apos;activité
-                        </h3>
-
-                        <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                                    <MapPin className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-blue-900">Coiffeur à Domicile</h4>
-                                    <p className="text-sm text-blue-700">Vous intervenez chez vos clients</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label>Rayon de déplacement (km)</Label>
-                            <Input type="number" defaultValue="20" />
-                            <p className="text-xs text-muted-foreground">Distance max autour de votre adresse principale.</p>
-                        </div>
-
-                        <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-muted-foreground border-2 border-dashed">
-                            Carte Google Maps (Rayon)
-                        </div>
-                    </div>
+                    )}
                 </TabsContent>
             </Tabs>
-
-            <div className="fixed bottom-6 right-6">
-                <Button size="lg" className="shadow-xl" onClick={onSave} disabled={loading}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {loading ? "Enregistrement..." : "Enregistrer les modifications"}
-                </Button>
-            </div>
         </div>
     );
-}
-
-function PlusIcon() {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6 text-muted-foreground"
-        >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-        </svg>
-    )
 }

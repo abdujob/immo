@@ -24,7 +24,7 @@ export interface Property {
     district?: string;
     lat?: number;
     lng?: number;
-    images?: string;
+    images?: string | string[];
     virtualTourUrl?: string;
     status: string;
     featured: boolean;
@@ -38,6 +38,7 @@ export interface Property {
         lastName: string;
         email: string;
         phone?: string;
+        avatar?: string;
     };
     agency?: {
         id: string;
@@ -45,8 +46,19 @@ export interface Property {
         phone: string;
         email: string;
     };
+    reviews?: any[];
     _count?: {
         favorites?: number;
+    };
+}
+
+export interface PaginatedProperties {
+    data: Property[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
     };
 }
 
@@ -79,175 +91,357 @@ export interface SearchFilters {
     hasPool?: boolean;
 }
 
-const mockProperties: Property[] = [
-    {
-        id: "prop-1",
-        title: "Villa de Luxe avec Vue sur l'Océan",
-        description: "Magnifique villa moderne située sur la Corniche des Almadies. Profitez d'une piscine à débordement et d'un espace de vie exceptionnel.",
-        type: "VILLA",
-        transactionType: "VENTE",
-        price: 450000000,
-        surface: 600,
-        rooms: 8,
-        bedrooms: 5,
-        bathrooms: 4,
-        hasGarden: true,
-        hasParking: true,
-        hasPool: true,
-        isFurnished: true,
-        hasAirCon: true,
-        hasGuardian: true,
-        address: "Route des Almadies",
-        city: "Dakar",
-        district: "Almadies",
-        images: JSON.stringify([
-            "https://images.unsplash.com/photo-1613490901591-8ac9fcdcc279?auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80"
-        ]),
-        status: "ACTIVE",
-        featured: true,
-        verified: true,
-        views: 1250,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        owner: { id: "user-1", firstName: "Jean", lastName: "Dupont", email: "jean@example.com" },
-        _count: { favorites: 42 }
-    },
-    {
-        id: "prop-2",
-        title: "Appartement Premium F4 Plateau",
-        description: "Très bel appartement refait à neuf en plein cœur de Dakar Plateau, proche de toutes commodités et ambassades.",
-        type: "APPARTEMENT",
-        transactionType: "LOCATION",
-        price: 1500000,
-        surface: 180,
-        rooms: 4,
-        bedrooms: 3,
-        bathrooms: 2,
-        hasGarden: false,
-        hasParking: true,
-        hasPool: false,
-        isFurnished: false,
-        hasAirCon: true,
-        hasGuardian: true,
-        address: "Rue Félix Faure",
-        city: "Dakar",
-        district: "Plateau",
-        images: JSON.stringify([
-            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1502672260266-1c1c9b2cb46a?auto=format&fit=crop&q=80"
-        ]),
-        status: "ACTIVE",
-        featured: true,
-        verified: true,
-        views: 890,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        owner: { id: "user-2", firstName: "Fatou", lastName: "Diop", email: "fatou@example.com" },
-        _count: { favorites: 15 }
-    },
-    {
-        id: "prop-3",
-        title: "Maison Familiale avec Jardin à Ngor",
-        description: "Idéale pour une famille, cette maison spacieuse offre un grand jardin fleuri et un cadre de vie calme.",
-        type: "MAISON",
-        transactionType: "VENTE",
-        price: 210000000,
-        surface: 350,
-        rooms: 6,
-        bedrooms: 4,
-        bathrooms: 3,
-        hasGarden: true,
-        hasParking: true,
-        hasPool: false,
-        isFurnished: false,
-        hasAirCon: true,
-        hasGuardian: false,
-        address: "Cité Ngor Almadies",
-        city: "Dakar",
-        district: "Ngor",
-        images: JSON.stringify([
-            "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?auto=format&fit=crop&q=80"
-        ]),
-        status: "ACTIVE",
-        featured: false,
-        verified: true,
-        views: 450,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        owner: { id: "user-3", firstName: "Moussa", lastName: "Sow", email: "msow@example.com" },
-        _count: { favorites: 5 }
-    }
-];
+export interface GlobalStats {
+    propertiesCount: number;
+    agenciesCount: number;
+    usersCount: number;
+}
+
+// ─── PROPERTIES ────────────────────────────────────────────────────────────────
 
 /**
- * Get all properties
+ * Get all properties (paginated)
  */
-export async function getProperties(): Promise<Property[]> {
-    return Promise.resolve(mockProperties);
+export async function getProperties(page = 1, limit = 20): Promise<Property[]> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/properties?page=${page}&limit=${limit}`, {
+            cache: 'no-store'
+});
+        if (!res.ok) throw new Error('Erreur serveur');
+        const json: PaginatedProperties = await res.json();
+        return json.data ?? [];
+    } catch (error) {
+        console.error('getProperties error:', error);
+        return [];
+    }
+}
+
+/**
+ * Get paginated properties with meta (pour afficher le total, etc.)
+ */
+export async function getPaginatedProperties(
+    page = 1,
+    limit = 20,
+    filters: Record<string, any> = {}
+): Promise<PaginatedProperties> {
+    try {
+        const params = new URLSearchParams({
+            page: String(page),
+            limit: String(limit),
+            ...Object.fromEntries(
+                Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
+            )
+});
+        const res = await fetch(`${API_BASE_URL}/properties?${params}`, {
+            cache: 'no-store'
+});
+        if (!res.ok) throw new Error('Erreur serveur');
+        return await res.json();
+    } catch (error) {
+        console.error('getPaginatedProperties error:', error);
+        return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
+    }
 }
 
 /**
  * Get a single property by ID
  */
 export async function getPropertyById(id: string): Promise<Property | null> {
-    const prop = mockProperties.find(p => p.id === id);
-    return Promise.resolve(prop || null);
-}
-
-/**
- * Search properties with filters
- */
-export async function searchProperties(filters: SearchFilters): Promise<Property[]> {
-    // Basic mock filtering
-    let results = [...mockProperties];
-    if (filters.city) results = results.filter(p => p.city.toLowerCase() === filters.city?.toLowerCase());
-    if (filters.propertyType) results = results.filter(p => p.type === filters.propertyType);
-    if (filters.transactionType) results = results.filter(p => p.transactionType === filters.transactionType);
-    return Promise.resolve(results);
-}
-
-/**
- * Get all agencies
- */
-export async function getAgencies(): Promise<Agency[]> {
     try {
-        const response = await fetch(`${API_BASE_URL}/agencies`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch agencies');
-        }
-        return await response.json();
+        const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
+            cache: 'no-store'
+});
+        if (!res.ok) return null;
+        return await res.json();
     } catch (error) {
-        console.error('Error fetching agencies:', error);
-        return [];
+        console.error('getPropertyById error:', error);
+        return null;
     }
 }
 
 /**
  * Get featured properties
  */
-export async function getFeaturedProperties(): Promise<Property[]> {
-    return Promise.resolve(mockProperties.filter(p => p.featured));
+export async function getFeaturedProperties(limit = 6): Promise<Property[]> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/properties/featured?limit=${limit}`, {
+            next: { revalidate: 60 }, // cache 60s côté SSR
+        });
+        if (!res.ok) throw new Error('Erreur serveur');
+        return await res.json();
+    } catch (error) {
+        console.error('getFeaturedProperties error:', error);
+        return [];
+    }
 }
 
 /**
- * Parse images from JSON string
+ * Get recent properties
  */
-export function parseImages(imagesJson?: string): string[] {
-    if (!imagesJson) return ['/placeholder-property.svg'];
+export async function getRecentProperties(limit = 8): Promise<Property[]> {
     try {
-        const images = JSON.parse(imagesJson);
-        if (Array.isArray(images) && images.length > 0) {
-            return images.map((img: string) =>
+        const res = await fetch(`${API_BASE_URL}/properties/recent?limit=${limit}`, {
+            next: { revalidate: 60 }
+});
+        if (!res.ok) throw new Error('Erreur serveur');
+        return await res.json();
+    } catch (error) {
+        console.error('getRecentProperties error:', error);
+        return [];
+    }
+}
+
+/**
+ * Get similar properties for a given property ID
+ */
+export async function getSimilarProperties(propertyId: string, limit = 3): Promise<Property[]> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/properties/${propertyId}/similar?limit=${limit}`, {
+            cache: 'no-store'
+});
+        if (!res.ok) throw new Error('Erreur serveur');
+        return await res.json();
+    } catch (error) {
+        console.error('getSimilarProperties error:', error);
+        return [];
+    }
+}
+
+/**
+ * Get my properties (authenticated)
+ */
+export async function getMyProperties(): Promise<Property[]> {
+    try {
+        const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        if (!user) return [];
+        const res = await fetch(`${API_BASE_URL}/properties/my-properties`, {
+            credentials: 'include',
+            cache: 'no-store'
+});
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data;
+    } catch (error) {
+        console.error('getMyProperties error:', error);
+        return [];
+    }
+}
+
+/**
+ * Update property status
+ */
+export async function updatePropertyStatus(id: string, status: string): Promise<boolean> {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) return false;
+    try {
+        const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+credentials: 'include',
+            body: JSON.stringify({ status })
+});
+        return res.ok;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Toggle property featured status
+ */
+export async function updatePropertyFeatured(id: string, featured: boolean): Promise<boolean> {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) return false;
+    try {
+        const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+credentials: 'include',
+            body: JSON.stringify({ featured })
+});
+        return res.ok;
+    } catch {
+        return false;
+    }
+}
+
+// ─── SEARCH ────────────────────────────────────────────────────────────────────
+
+/**
+ * Search properties with filters (uses /search endpoint)
+ */
+export async function searchProperties(filters: SearchFilters): Promise<Property[]> {
+    try {
+        const params = new URLSearchParams();
+        if (filters.city) params.set('city', filters.city);
+        // Le backend attend "propertyType" mais le champ en BDD s'appelle "type"
+        if (filters.propertyType) params.set('propertyType', filters.propertyType);
+        if (filters.transactionType) params.set('transactionType', filters.transactionType);
+        if (filters.minPrice !== undefined) params.set('minPrice', String(filters.minPrice));
+        if (filters.maxPrice !== undefined) params.set('maxPrice', String(filters.maxPrice));
+        if (filters.minSurface !== undefined) params.set('minSurface', String(filters.minSurface));
+        if (filters.maxSurface !== undefined) params.set('maxSurface', String(filters.maxSurface));
+        if (filters.bedrooms !== undefined) params.set('bedrooms', String(filters.bedrooms));
+        if (filters.hasParking) params.set('hasParking', 'true');
+        if (filters.hasGarden) params.set('hasGarden', 'true');
+        if (filters.hasPool) params.set('hasPool', 'true');
+
+        const res = await fetch(`${API_BASE_URL}/search?${params}`, {
+            cache: 'no-store'
+});
+        if (!res.ok) throw new Error('Erreur serveur');
+        return await res.json();
+    } catch (error) {
+        console.error('searchProperties error:', error);
+        return [];
+    }
+}
+
+// ─── AGENCIES ──────────────────────────────────────────────────────────────────
+
+/**
+ * Get all agencies
+ */
+export async function getAgencies(): Promise<Agency[]> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/agencies`, {
+            next: { revalidate: 300 }
+});
+        if (!res.ok) throw new Error('Erreur serveur');
+        return await res.json();
+    } catch (error) {
+        console.error('getAgencies error:', error);
+        return [];
+    }
+}
+
+/**
+ * Get a single agency by ID
+ */
+export async function getAgencyById(id: string): Promise<any> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/agencies/${id}`, {
+            next: { revalidate: 60 }
+});
+        if (!res.ok) throw new Error('Erreur serveur');
+        return await res.json();
+    } catch (error) {
+        console.error('getAgencyById error:', error);
+        return null;
+    }
+}
+
+// ─── FAVORITES ─────────────────────────────────────────────────────────────────
+
+/**
+ * Add a property to favorites
+ */
+export async function addFavorite(propertyId: string): Promise<boolean> {
+    try {
+        const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        if (!user) throw new Error('User not authenticated');
+
+        const res = await fetch(`${API_BASE_URL}/favorites`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            body: JSON.stringify({ propertyId })
+});
+        return res.ok;
+    } catch (error) {
+        console.error('addFavorite error:', error);
+        return false;
+    }
+}
+
+/**
+ * Remove a property from favorites
+ */
+export async function removeFavorite(propertyId: string): Promise<boolean> {
+    try {
+        const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        if (!user) throw new Error('User not authenticated');
+
+        const res = await fetch(`${API_BASE_URL}/favorites/${propertyId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+});
+        return res.ok;
+    } catch (error) {
+        console.error('removeFavorite error:', error);
+        return false;
+    }
+}
+
+/**
+ * Get user's favorite properties
+ */
+export async function getFavorites(): Promise<Property[]> {
+    try {
+        const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+        if (!user) return [];
+
+        const res = await fetch(`${API_BASE_URL}/favorites`, {
+            credentials: 'include',
+            cache: 'no-store'
+});
+        if (!res.ok) return [];
+
+        const data = await res.json();
+        if (Array.isArray(data)) {
+            return data.map((fav: any) => fav.property ?? fav);
+        }
+        return [];
+    } catch (error) {
+        console.error('getFavorites error:', error);
+        return [];
+    }
+}
+
+/**
+ * Check if a property is in favorites
+ */
+export async function isFavorite(propertyId: string): Promise<boolean> {
+    try {
+        const favorites = await getFavorites();
+        return favorites.some((fav) => fav.id === propertyId);
+    } catch (error) {
+        console.error('isFavorite error:', error);
+        return false;
+    }
+}
+
+// ─── UTILITIES ─────────────────────────────────────────────────────────────────
+
+/**
+ * Parse images — accepts both string[] (backend) and JSON string (legacy)
+ */
+export function parseImages(images?: string | string[]): string[] {
+    if (!images) return ['/placeholder-property.svg'];
+
+    // Already an array (from backend)
+    if (Array.isArray(images)) {
+        if (images.length === 0) return ['/placeholder-property.svg'];
+        return images.map((img) =>
+            img.startsWith('/uploads') ? `${API_BASE_URL}${img}` : img
+        );
+    }
+
+    // JSON string (legacy / stored format)
+    try {
+        const parsed = JSON.parse(images);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((img: string) =>
                 img.startsWith('/uploads') ? `${API_BASE_URL}${img}` : img
             );
         }
-        return ['/placeholder-property.svg'];
     } catch {
-        return ['/placeholder-property.svg'];
+        // Not a JSON string — treat as direct URL
+        if (images.startsWith('http') || images.startsWith('/')) {
+            return [images.startsWith('/uploads') ? `${API_BASE_URL}${images}` : images];
+        }
     }
+
+    return ['/placeholder-property.svg'];
 }
 
 /**
@@ -264,96 +458,127 @@ export function formatPrice(price: number): string {
 }
 
 /**
- * Add a property to favorites
+ * Build a full image URL from a relative path
  */
-export async function addFavorite(propertyId: string): Promise<boolean> {
-    try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            throw new Error('User not authenticated');
-        }
+export function getImageUrl(path: string): string {
+    if (!path) return '/placeholder-property.svg';
+    if (path.startsWith('http')) return path;
+    return `${API_BASE_URL}${path}`;
+}
 
-        const response = await fetch(`${API_BASE_URL}/favorites`, {
+// ==============================
+// CONTACT / MESSAGING
+// ==============================
+
+/**
+ * Send a contact message for a property
+ */
+export async function sendContact(propertyId: string, message: string, phone?: string): Promise<boolean> {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) return false;
+    try {
+        const res = await fetch(`${API_BASE_URL}/contacts`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ propertyId }),
-        });
-
-        return response.ok;
-    } catch (error) {
-        console.error('Error adding favorite:', error);
+            headers: { 'Content-Type': 'application/json' },
+credentials: 'include',
+            body: JSON.stringify({ propertyId, message, phone })
+});
+        return res.ok;
+    } catch {
         return false;
     }
 }
 
 /**
- * Remove a property from favorites
+ * Get contacts received (as property owner)
  */
-export async function removeFavorite(propertyId: string): Promise<boolean> {
+export async function getContactsReceived(): Promise<any[]> {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) return [];
     try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            throw new Error('User not authenticated');
-        }
-
-        const response = await fetch(`${API_BASE_URL}/favorites/${propertyId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        });
-
-        return response.ok;
-    } catch (error) {
-        console.error('Error removing favorite:', error);
-        return false;
-    }
-}
-
-/**
- * Get user's favorite properties
- */
-export async function getFavorites(): Promise<Property[]> {
-    try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            return [];
-        }
-
-        const response = await fetch(`${API_BASE_URL}/favorites`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            return [];
-        }
-
-        const data = await response.json();
-        // Backend returns favorites with property data
-        if (Array.isArray(data)) {
-            return data.map((fav: any) => fav.property);
-        }
-        return [];
-    } catch (error) {
-        console.error('Error fetching favorites:', error);
+        const res = await fetch(`${API_BASE_URL}/contacts/received`, {
+            credentials: 'include'
+});
+        return res.ok ? res.json() : [];
+    } catch {
         return [];
     }
 }
 
 /**
- * Check if a property is in favorites
+ * Get contacts sent by the user
  */
-export async function isFavorite(propertyId: string): Promise<boolean> {
+export async function getContactsSent(): Promise<any[]> {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) return [];
     try {
-        const favorites = await getFavorites();
-        return favorites.some(fav => fav.id === propertyId);
-    } catch (error) {
-        console.error('Error checking favorite:', error);
+        const res = await fetch(`${API_BASE_URL}/contacts/sent`, {
+            credentials: 'include'
+});
+        return res.ok ? res.json() : [];
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Update contact status (PENDING | SEEN | REPLIED | CLOSED)
+ */
+export async function updateContactStatus(contactId: string, status: string): Promise<boolean> {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) return false;
+    try {
+        const res = await fetch(`${API_BASE_URL}/contacts/${contactId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+credentials: 'include',
+            body: JSON.stringify({ status })
+});
+        return res.ok;
+    } catch {
         return false;
+    }
+}
+
+// ─── REVIEWS ───────────────────────────────────────────────────────────────────
+
+/**
+ * Submit a review for a property or agency
+ */
+export async function submitReview(data: {
+    targetType: 'PROPERTY' | 'AGENCY';
+    propertyId?: string;
+    agencyId?: string;
+    rating: number;
+    comment: string;
+}): Promise<boolean> {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) return false;
+    try {
+        const res = await fetch(`${API_BASE_URL}/reviews`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+credentials: 'include',
+            body: JSON.stringify(data)
+});
+        return res.ok;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Get global stats for the homepage
+ */
+export async function getStats(): Promise<GlobalStats> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/stats`, {
+            next: { revalidate: 3600 } // Cache for 1 hour
+        });
+        if (!response.ok) throw new Error('Failed to fetch stats');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching stats:', error);
+        return { propertiesCount: 0, agenciesCount: 0, usersCount: 0 };
     }
 }

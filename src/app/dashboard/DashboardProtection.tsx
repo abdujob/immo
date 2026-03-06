@@ -7,10 +7,10 @@ export default function DashboardProtection({ children }: { children: React.Reac
     const router = useRouter();
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
         const user = localStorage.getItem('user');
 
-        if (!token || !user) {
+        if (!user || !user) {
             router.push('/auth/login');
             return;
         }

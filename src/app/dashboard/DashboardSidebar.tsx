@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import {
     LayoutDashboard,
     Home,
@@ -22,11 +24,12 @@ const menuItems = [
 
 export default function DashboardSidebar() {
     const pathname = usePathname();
+    const { logout } = useAuth();
+    const router = useRouter();
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/';
+        logout();
+        router.push('/');
     };
 
     return (
@@ -50,8 +53,8 @@ export default function DashboardSidebar() {
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                                    ? 'bg-blue-50 text-blue-600 font-medium'
-                                    : 'text-gray-700 hover:bg-gray-50'
+                                ? 'bg-blue-50 text-blue-600 font-medium'
+                                : 'text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             <Icon className="w-5 h-5" />

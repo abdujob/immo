@@ -10,13 +10,14 @@ import { Home, Store, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 import {
     Form,
     FormControl,
     FormField,
     FormItem,
     FormLabel,
-    FormMessage,
+    FormMessage
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 
@@ -26,19 +27,20 @@ const proSchema = z.object({
     lastName: z.string().min(2, "Le nom est requis"),
     bio: z.string().min(10, "La bio doit faire au moins 10 caractères"),
     experience: z.string().min(1, "L'expérience est requise"),
-    // Salon fields
-    salonName: z.string().optional(),
-    salonAddress: z.string().optional(),
-    // Home fields
-    travelRadius: z.string().optional(),
-    travelFee: z.string().optional(),
+    // Agency fields
+    agencyName: z.string().optional(),
+    agencyAddress: z.string().optional(),
+    // Individual fields
+    operatingZone: z.string().optional()
 });
 
 type ProFormValues = z.infer<typeof proSchema>;
 
 export default function OnboardingPage() {
+    const { toast } = useToast();
     const [step, setStep] = useState(1);
-    const [type, setType] = useState<"SALON" | "DOMICILE" | null>(null);
+    const [type, setType] = useState<"AGENCE" | "PARTICULIER" | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<ProFormValues>({
         resolver: zodResolver(proSchema),
@@ -46,14 +48,48 @@ export default function OnboardingPage() {
             firstName: "",
             lastName: "",
             bio: "",
-            experience: "",
-        },
-    });
+            experience: ""
+}
+});
 
-    const onSubmit = (data: ProFormValues) => {
-        console.log("Onboarding Data:", { ...data, type });
-        // Simulate API call and redirect
-        window.location.href = "/pro/dashboard";
+    const onSubmit = async (data: ProFormValues) => {
+        setIsSubmitting(true);
+        try {
+            const user = localStorage.getItem('user');
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+            const payload = {
+                name: type === "AGENCE" ? data.agencyName : `${data.firstName} ${data.lastName}`,
+                description: data.bio,
+                address: type === "AGENCE" ? data.agencyAddress : data.operatingZone,
+                city: type === "AGENCE" ? data.agencyAddress?.split(',')[0] || "Dakar" : data.operatingZone?.split(',')[0] || "Dakar",
+                phone: "000000000", // On pourrait demander le téléphone, on met un dummy pour l'instant vu le schema
+                email: "contact@pro.com", // Idem
+                website: ""
+};
+
+            const response = await fetch(`${API_URL}/agencies`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    
+},
+                body: JSON.stringify(payload)
+});
+
+            if (response.ok) {
+                toast({ title: "Succès", description: "Votre espace Pro a été créé avec succès." });
+                window.location.href = "/pro/dashboard";
+            } else {
+                const errData = await response.json();
+                toast({ title: "Erreur", description: errData.message || "Une erreur est survenue.", variant: "destructive" });
+            }
+        } catch (error) {
+            console.error("Onboarding error:", error);
+            toast({ title: "Erreur", description: "Impossible de se connecter au serveur.", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -81,35 +117,35 @@ export default function OnboardingPage() {
                             <div className="grid gap-6 sm:grid-cols-2 mt-8">
                                 {/* Domicile Card */}
                                 <button
-                                    onClick={() => setType("DOMICILE")}
+                                    onClick={() => setType("PARTICULIER")}
                                     className={cn(
                                         "group relative flex flex-col items-center gap-4 rounded-2xl border-2 p-8 transition-all hover:border-primary/50 hover:bg-primary/5",
-                                        type === "DOMICILE" ? "border-primary bg-primary/5 ring-2 ring-primary ring-offset-2" : "border-border bg-card"
+                                        type === "PARTICULIER" ? "border-primary bg-primary/5 ring-2 ring-primary ring-offset-2" : "border-border bg-card"
                                     )}
                                 >
                                     <div className="rounded-full bg-blue-100 p-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                         <Home className="h-8 w-8" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h3 className="font-bold">Coiffeur à Domicile</h3>
-                                        <p className="text-sm text-muted-foreground">Je me déplace chez mes clients</p>
+                                        <h3 className="font-bold">Particulier</h3>
+                                        <p className="text-sm text-muted-foreground">Je vends ou loue un bien en direct</p>
                                     </div>
                                 </button>
 
                                 {/* Salon Card */}
                                 <button
-                                    onClick={() => setType("SALON")}
+                                    onClick={() => setType("AGENCE")}
                                     className={cn(
                                         "group relative flex flex-col items-center gap-4 rounded-2xl border-2 p-8 transition-all hover:border-primary/50 hover:bg-primary/5",
-                                        type === "SALON" ? "border-primary bg-primary/5 ring-2 ring-primary ring-offset-2" : "border-border bg-card"
+                                        type === "AGENCE" ? "border-primary bg-primary/5 ring-2 ring-primary ring-offset-2" : "border-border bg-card"
                                     )}
                                 >
                                     <div className="rounded-full bg-purple-100 p-4 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
                                         <Store className="h-8 w-8" />
                                     </div>
                                     <div className="space-y-1">
-                                        <h3 className="font-bold">Salon de Coiffure</h3>
-                                        <p className="text-sm text-muted-foreground">Je reçois dans mon établissement</p>
+                                        <h3 className="font-bold">Agence Immobilière</h3>
+                                        <p className="text-sm text-muted-foreground">Je représente une agence professionnelle</p>
                                     </div>
                                 </button>
                             </div>
@@ -138,7 +174,7 @@ export default function OnboardingPage() {
                             <div className="mb-6">
                                 <h2 className="text-2xl font-bold">Complétez votre profil</h2>
                                 <p className="text-muted-foreground">
-                                    Vous avez choisi : <span className="font-semibold text-primary">{type === "SALON" ? "Salon de Coiffure" : "Coiffeur à Domicile"}</span>
+                                    Vous avez choisi : <span className="font-semibold text-primary">{type === "AGENCE" ? "Agence Immobilière" : "Particulier"}</span>
                                 </p>
                             </div>
 
@@ -204,18 +240,18 @@ export default function OnboardingPage() {
                                     </div>
 
                                     {/* Dynamic Fields based on Type */}
-                                    {type === "SALON" ? (
+                                    {type === "AGENCE" ? (
                                         <div className="space-y-4 pt-4 border-t">
-                                            <h3 className="font-semibold">Infos du Salon</h3>
+                                            <h3 className="font-semibold">Informations de l&apos;agence</h3>
                                             <div className="grid gap-4 sm:grid-cols-2">
                                                 <FormField
                                                     control={form.control}
-                                                    name="salonName"
+                                                    name="agencyName"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Nom du salon</FormLabel>
+                                                            <FormLabel>Nom de l&apos;agence</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="Studio Luxe" {...field} />
+                                                                <Input placeholder="Immo Sénégal" {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -223,12 +259,12 @@ export default function OnboardingPage() {
                                                 />
                                                 <FormField
                                                     control={form.control}
-                                                    name="salonAddress"
+                                                    name="agencyAddress"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Adresse complète</FormLabel>
+                                                            <FormLabel>Adresse de l&apos;agence</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="123 Rue de la Paix..." {...field} />
+                                                                <Input placeholder="Plateau, Dakar" {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -238,29 +274,16 @@ export default function OnboardingPage() {
                                         </div>
                                     ) : (
                                         <div className="space-y-4 pt-4 border-t">
-                                            <h3 className="font-semibold">Zone & Déplacement</h3>
+                                            <h3 className="font-semibold">Zone d&apos;activité</h3>
                                             <div className="grid gap-4 sm:grid-cols-2">
                                                 <FormField
                                                     control={form.control}
-                                                    name="travelRadius"
+                                                    name="operatingZone"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Rayon de déplacement (km)</FormLabel>
+                                                            <FormLabel>Villes couvertes</FormLabel>
                                                             <FormControl>
-                                                                <Input type="number" placeholder="20" {...field} />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <FormField
-                                                    control={form.control}
-                                                    name="travelFee"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Frais de déplacement (€)</FormLabel>
-                                                            <FormControl>
-                                                                <Input type="number" placeholder="10" {...field} />
+                                                                <Input placeholder="Dakar, Thiès..." {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -271,11 +294,11 @@ export default function OnboardingPage() {
                                     )}
 
                                     <div className="flex justify-between pt-6">
-                                        <Button type="button" variant="ghost" onClick={() => setStep(1)}>
+                                        <Button type="button" variant="ghost" onClick={() => setStep(1)} disabled={isSubmitting}>
                                             Retour
                                         </Button>
-                                        <Button type="submit" size="lg" className="w-[200px]">
-                                            Créer mon espace
+                                        <Button type="submit" size="lg" className="w-[200px]" disabled={isSubmitting}>
+                                            {isSubmitting ? "Création..." : "Créer mon espace"}
                                         </Button>
                                     </div>
                                 </form>
