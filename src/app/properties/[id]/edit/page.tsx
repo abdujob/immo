@@ -92,9 +92,7 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
             }
 
             const response = await fetch(`${API_BASE_URL}/properties/${params.id}`, {
-                headers: {
-                    
-                }
+                credentials: 'include'
             });
 
             if (response.ok) {
@@ -206,12 +204,8 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
             });
 
             const response = await fetch(`${API_BASE_URL}/properties/${params.id}`, {
-                method: 'PATCH',
-                headers: {
-                    
-},
-                body: submitData
-});
+                credentials: 'include'
+            });
 
             if (response.ok) {
                 router.push('/dashboard/properties');

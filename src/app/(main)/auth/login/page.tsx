@@ -50,6 +50,7 @@ export default function LoginPage() {
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: 'include',
                 body: JSON.stringify(values),
             });
 
@@ -59,8 +60,7 @@ export default function LoginPage() {
 
             const data = await response.json();
 
-            // Store Token
-            localStorage.setItem("token", data.access_token);
+            // Store User (Note: Token is now in HttpOnly Cookie)
             localStorage.setItem("user", JSON.stringify(data.user));
 
             // Redirect based on role

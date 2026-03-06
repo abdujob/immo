@@ -129,11 +129,9 @@ export default function NewPropertyPage() {
 
             const response = await fetch(`${API_BASE_URL}/properties`, {
                 method: 'POST',
-                headers: {
-                    
-},
+                credentials: 'include',
                 body: submitData
-});
+            });
 
             if (response.ok) {
                 router.push('/dashboard/properties');
