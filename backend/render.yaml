@@ -5,11 +5,13 @@ services:
     region: frankfurt
     plan: free
     rootDir: .
-    buildCommand: npm install && npm run build && npx prisma generate && npx prisma migrate deploy
-    startCommand: npm run start:prod
+    buildCommand: npm install --include=dev && npm run build && npx prisma generate && npx prisma migrate deploy
+    startCommand: node dist/main
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NPM_CONFIG_PRODUCTION
+        value: false
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
