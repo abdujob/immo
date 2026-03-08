@@ -11,7 +11,7 @@ import {
     Clock, CheckCheck
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { getConversations, getThreadMessages, sendContact, formatPrice } from "@/lib/api";
@@ -52,6 +52,10 @@ export default function MessagesPage() {
     const router = useRouter();
     const { toast } = useToast();
 
+    const searchParams = useSearchParams();
+    const targetPropertyId = searchParams.get('propertyId');
+    const targetUserId = searchParams.get('senderId');
+
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [activeThread, setActiveThread] = useState<Conversation | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -88,6 +92,16 @@ export default function MessagesPage() {
         try {
             const data = await getConversations();
             setConversations(data);
+
+            // Auto-select conversation based on query params
+            if (targetPropertyId && targetUserId && !activeThread) {
+                const thread = data.find((c: Conversation) =>
+                    c.property.id === targetPropertyId && c.otherUser.id === targetUserId
+                );
+                if (thread) {
+                    setActiveThread(thread);
+                }
+            }
         } catch {
             toast({ title: "Erreur", description: "Impossible de charger les conversations.", variant: "destructive" });
         } finally {

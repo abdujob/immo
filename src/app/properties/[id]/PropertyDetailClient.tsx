@@ -87,10 +87,10 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
         }
 
         const message = contactForm.message.trim();
-        if (message.length < 10) {
+        if (!message) {
             toast({
-                title: "Message trop court",
-                description: "Le message doit contenir au moins 10 caractères.",
+                title: "Message vide",
+                description: "Le message ne peut pas être vide.",
                 variant: "destructive"
             });
             return;

@@ -143,21 +143,32 @@ export function Navbar() {
                                                     Aucune notification
                                                 </div>
                                             ) : (
-                                                notifications.map((notif: any) => (
-                                                    <DropdownMenuItem
-                                                        key={notif.id}
-                                                        className={`flex flex-col items-start p-3 cursor-pointer border-b last:border-0 ${notif.read ? 'opacity-70' : 'bg-blue-50/50'}`}
-                                                        onClick={() => !notif.read && markAsRead(notif.id)}
-                                                    >
-                                                        <div className="flex w-full justify-between items-start mb-1">
-                                                            <span className="text-xs font-semibold text-gray-500">{notif.type}</span>
-                                                            <span className="text-[10px] text-gray-400">
-                                                                {new Date(notif.createdAt).toLocaleDateString()}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-sm text-gray-800 line-clamp-2">{notif.message}</p>
-                                                    </DropdownMenuItem>
-                                                ))
+                                                notifications.map((notif: any) => {
+                                                    const handleClick = () => {
+                                                        if (!notif.read) markAsRead(notif.id);
+
+                                                        if (notif.type === 'CONTACT' && notif.data) {
+                                                            const { propertyId, senderId } = notif.data;
+                                                            router.push(`/dashboard/messages?propertyId=${propertyId}&senderId=${senderId}`);
+                                                        }
+                                                    };
+
+                                                    return (
+                                                        <DropdownMenuItem
+                                                            key={notif.id}
+                                                            className={`flex flex-col items-start p-3 cursor-pointer border-b last:border-0 ${notif.read ? 'opacity-70' : 'bg-blue-50/50'}`}
+                                                            onClick={handleClick}
+                                                        >
+                                                            <div className="flex w-full justify-between items-start mb-1">
+                                                                <span className="text-xs font-semibold text-gray-500">{notif.type}</span>
+                                                                <span className="text-[10px] text-gray-400">
+                                                                    {new Date(notif.createdAt).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-800 line-clamp-2">{notif.message}</p>
+                                                        </DropdownMenuItem>
+                                                    );
+                                                })
                                             )}
                                         </div>
                                         <DropdownMenuSeparator />

@@ -59,6 +59,10 @@ export class ContactService {
                     userId: recipientId,
                     type: 'CONTACT',
                     message: `Nouveau message pour "${property.title}"`,
+                    data: {
+                        propertyId: dto.propertyId,
+                        senderId: senderId
+                    }
                 },
             });
         }

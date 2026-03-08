@@ -197,5 +197,6 @@ model Notification {
   type      String   // CONTACT | FAVORITE | REVIEW | PROPERTY_STATUS
   message   String
   read      Boolean  @default(false)
+  data      Json?
   createdAt DateTime @default(now())
 }
