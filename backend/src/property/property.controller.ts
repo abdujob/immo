@@ -75,6 +75,12 @@ export class PropertyController {
             const createPropertyDto = CreatePropertySchema.parse(parsedBody);
 
             const finalDto: any = { ...createPropertyDto };
+
+            // Set default status to ACTIVE if not provided
+            if (!finalDto.status) {
+                finalDto.status = 'ACTIVE';
+            }
+
             // Add image paths
             if (files?.images) {
                 finalDto.images = files.images.map(file => `/uploads/${file.filename}`);
