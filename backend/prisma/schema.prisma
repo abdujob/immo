@@ -153,8 +153,8 @@ model Contact {
   senderId   String
   sender     User     @relation("ContactSender", fields: [senderId], references: [id])
   
-  recipientId String
-  recipient   User     @relation("ContactRecipient", fields: [recipientId], references: [id])
+  recipientId String?
+  recipient   User?     @relation("ContactRecipient", fields: [recipientId], references: [id])
   
   parentId    String?
   parent      Contact?  @relation("ContactReplies", fields: [parentId], references: [id])
