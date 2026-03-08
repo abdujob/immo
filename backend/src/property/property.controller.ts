@@ -75,27 +75,20 @@ export class PropertyController {
 
             const createPropertyDto = CreatePropertySchema.parse(parsedBody);
 
-            const finalDto: any = { ...createPropertyDto };
-
-            // Set default values for optional fields required by Prisma
-            if (!finalDto.title) {
-                finalDto.title = '';
-            }
-            if (!finalDto.description) {
-                finalDto.description = '';
-            }
-
-            // Set default status to ACTIVE if not provided
-            if (!finalDto.status) {
-                finalDto.status = 'ACTIVE';
-            }
+            // Ensure all optional required fields have defaults
+            const finalDto = {
+                ...createPropertyDto,
+                title: createPropertyDto.title || '',
+                description: createPropertyDto.description || '',
+                status: 'ACTIVE' as const,
+            };
 
             // Add image paths
             if (files?.images) {
                 finalDto.images = files.images.map(file => `/uploads/${file.filename}`);
             }
 
-            return this.propertyService.create(req.user.id, finalDto);
+            return this.propertyService.create(req.user.id, finalDto as any);
         } catch (error) {
             if (error instanceof ZodError) {
                 console.error('Validation Error for property creation:', JSON.stringify(error.issues, null, 2));
