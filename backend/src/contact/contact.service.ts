@@ -81,7 +81,11 @@ export class ContactService {
             include: {
                 sender: { select: { id: true, firstName: true, lastName: true, avatar: true } },
                 recipient: { select: { id: true, firstName: true, lastName: true, avatar: true } },
-                property: { select: { id: true, title: true, city: true } }
+                property: {
+                    include: {
+                        owner: { select: { id: true, firstName: true, lastName: true, avatar: true } }
+                    }
+                }
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -90,7 +94,31 @@ export class ContactService {
         const threadsMap = new Map<string, any>();
 
         for (const contact of contacts) {
-            const otherUser = contact.senderId === userId ? contact.recipient : contact.sender;
+            let otherUser = contact.senderId === userId ? contact.recipient : contact.sender;
+
+            // Fallback for legacy messages where recipientId might be broken/missing
+            if (!otherUser) {
+                if (contact.senderId === userId) {
+                    // We are the sender, but recipient relation is missing. 
+                    // Use property owner as the recipient.
+                    const owner = (contact.property as any)?.owner;
+                    if (owner) {
+                        otherUser = {
+                            id: (contact.property as any).ownerId,
+                            firstName: owner.firstName,
+                            lastName: owner.lastName,
+                            avatar: owner.avatar
+                        } as any;
+                    }
+                } else {
+                    // We are the recipient (implied), but sender relation is missing.
+                    // This is rare, but we can't do much without sender info.
+                    continue;
+                }
+            }
+
+            if (!otherUser) continue;
+
             const threadKey = `${otherUser.id}-${contact.propertyId}`;
 
             if (!threadsMap.has(threadKey)) {
@@ -98,7 +126,13 @@ export class ContactService {
                     id: threadKey,
                     otherUser,
                     property: contact.property,
-                    lastMessage: contact,
+                    lastMessage: {
+                        id: contact.id,
+                        message: contact.message,
+                        createdAt: contact.createdAt,
+                        senderId: contact.senderId,
+                        status: contact.status
+                    },
                     unreadCount: contact.recipientId === userId && contact.status === 'PENDING' ? 1 : 0
                 });
             } else {
@@ -126,12 +160,28 @@ export class ContactService {
             data: { status: 'SEEN' }
         });
 
+        // Broaden the search to include cases where recipientId might be point to a "dummy" user
+        // but the message logically belongs to the thread between userId and otherUserId for this property.
+
+        // Find property to identify owner
+        const property = await this.prisma.property.findUnique({
+            where: { id: propertyId }
+        });
+
+        const isOtherUserOwner = property?.ownerId === otherUserId;
+        const isMeOwner = property?.ownerId === userId;
+
         return this.prisma.contact.findMany({
             where: {
-                propertyId,
-                AND: [
-                    { OR: [{ senderId: userId }, { recipientId: userId }] },
-                    { OR: [{ senderId: otherUserId }, { recipientId: otherUserId }] }
+                propertyId: propertyId,
+                OR: [
+                    // Standard matching
+                    { senderId: userId, recipientId: otherUserId },
+                    { senderId: otherUserId, recipientId: userId },
+                    // Legacy fallback for sender (user is sender, otherUser is property owner, and it's a first message)
+                    ...(isOtherUserOwner ? [{ senderId: userId, parentId: null }] : []),
+                    // Legacy fallback for owner recipient (user is property owner, otherUser is sender, and it's a first message)
+                    ...(isMeOwner ? [{ recipientId: userId, parentId: null }] : [])
                 ]
             },
             include: {
