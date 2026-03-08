@@ -15,7 +15,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 import Link from "next/link";
 import { getConversations, getThreadMessages, sendContact, formatPrice } from "@/lib/api";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 type UserBasic = {
@@ -176,7 +175,7 @@ export default function MessagesPage() {
                         </div>
                     </div>
 
-                    <ScrollArea className="flex-1">
+                    <div className="flex-1 overflow-y-auto">
                         <div className="divide-y divide-gray-100">
                             {filteredConversations.length === 0 ? (
                                 <div className="p-8 text-center text-muted-foreground">
@@ -222,7 +221,7 @@ export default function MessagesPage() {
                                 ))
                             )}
                         </div>
-                    </ScrollArea>
+                    </div>
                 </div>
 
                 {/* Main Chat Area */}
@@ -297,8 +296,8 @@ export default function MessagesPage() {
                                                         )}
                                                         <div className={!isMe && !isLastFromSender ? 'ml-10' : ''}>
                                                             <div className={`px-4 py-3 rounded-2xl shadow-sm text-sm ${isMe
-                                                                    ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                                                    : 'bg-white border text-gray-800 rounded-tl-none'
+                                                                ? 'bg-primary text-primary-foreground rounded-tr-none'
+                                                                : 'bg-white border text-gray-800 rounded-tl-none'
                                                                 }`}>
                                                                 {msg.message}
                                                                 <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMe ? 'text-blue-100' : 'text-muted-foreground'}`}>
