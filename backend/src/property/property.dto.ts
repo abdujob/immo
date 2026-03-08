@@ -24,10 +24,8 @@ export const PropertyStatus = z.enum([
 
 // Create Property DTO
 export const CreatePropertySchema = z.object({
-    title: z.string().min(10, 'Le titre doit contenir au moins 10 caractères'),
-    description: z
-        .string()
-        .min(50, 'La description doit contenir au moins 50 caractères'),
+    title: z.string().optional(),
+    description: z.string().optional(),
     type: PropertyType,
     transactionType: TransactionType,
     price: z.number().positive('Le prix doit être positif'),
@@ -42,8 +40,8 @@ export const CreatePropertySchema = z.object({
     isFurnished: z.boolean().default(false),
     hasAirCon: z.boolean().default(false),
     hasGuardian: z.boolean().default(false),
-    address: z.string().min(5, 'L\'adresse doit contenir au moins 5 caractères'),
-    city: z.string().min(2, 'La ville est requise'),
+    address: z.string().optional(),
+    city: z.string().optional(),
     district: z.string().optional(),
     lat: z.number().optional(),
     lng: z.number().optional(),
