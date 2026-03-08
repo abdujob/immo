@@ -19,6 +19,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/api";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -28,8 +29,6 @@ export function Navbar() {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
     useEffect(() => {
         if (isAuthenticated) {
             fetchNotifications();
@@ -38,14 +37,9 @@ export function Navbar() {
 
     const fetchNotifications = async () => {
         try {
-            const res = await fetch(`${API_URL}/notifications`, {
-                credentials: 'include'
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setNotifications(data);
-                setUnreadCount(data.filter((n: any) => !n.read).length);
-            }
+            const data = await getNotifications();
+            setNotifications(data);
+            setUnreadCount(data.filter((n: any) => !n.read).length);
         } catch (error) {
             console.error("Failed to fetch notifications", error);
         }
@@ -53,12 +47,11 @@ export function Navbar() {
 
     const markAsRead = async (id: string) => {
         try {
-            await fetch(`${API_URL}/notifications/${id}/read`, {
-                method: 'PATCH',
-                credentials: 'include'
-            });
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-            setUnreadCount(prev => Math.max(0, prev - 1));
+            const success = await markNotificationAsRead(id);
+            if (success) {
+                setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
         } catch (error) {
             console.error("Failed to mark as read", error);
         }
@@ -66,12 +59,11 @@ export function Navbar() {
 
     const markAllAsRead = async () => {
         try {
-            await fetch(`${API_URL}/notifications/read-all`, {
-                method: 'PATCH',
-                credentials: 'include'
-            });
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-            setUnreadCount(0);
+            const success = await markAllNotificationsAsRead();
+            if (success) {
+                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                setUnreadCount(0);
+            }
         } catch (error) {
             console.error("Failed to mark all as read", error);
         }

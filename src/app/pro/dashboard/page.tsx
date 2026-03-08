@@ -10,8 +10,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { getMyProperties, getContactsReceived } from "@/lib/api";
 
 interface AgencyStats {
     totalProperties: number;
@@ -47,34 +46,27 @@ export default function ProDashboardPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            // Fetch my properties
-            const propRes = await fetch(`${API_URL}/properties/my-properties`, {
-                credentials: 'include'
-            });
-            if (propRes.ok) {
-                const properties = await propRes.json();
-                const totalViews = properties.reduce((s: number, p: any) => s + (p.views || 0), 0);
-                const totalFavs = properties.reduce((s: number, p: any) => s + (p._count?.favorites || 0), 0);
-                const active = properties.filter((p: any) => p.status === 'ACTIVE').length;
-                setRecentProperties(properties.slice(0, 5));
-                setStats(prev => ({
-                    ...prev,
-                    totalProperties: properties.length,
-                    activeProperties: active,
-                    totalViews,
-                    totalFavorites: totalFavs,
-                }));
-            }
+            // Fetch my properties using the helper
+            const properties = await getMyProperties();
 
-            // Fetch received contacts count
-            const contactRes = await fetch(`${API_URL}/contacts/received`, {
-                credentials: 'include'
-            });
-            if (contactRes.ok) {
-                const contacts = await contactRes.json();
-                const pending = contacts.filter((c: any) => c.status === 'PENDING').length;
-                setStats(prev => ({ ...prev, totalContacts: pending }));
-            }
+            const totalViews = properties.reduce((s: number, p: any) => s + (p.views || 0), 0);
+            const totalFavs = properties.reduce((s: number, p: any) => s + (p._count?.favorites || 0), 0);
+            const active = properties.filter((p: any) => p.status === 'ACTIVE').length;
+
+            setRecentProperties(properties.slice(0, 5));
+            setStats(prev => ({
+                ...prev,
+                totalProperties: properties.length,
+                activeProperties: active,
+                totalViews,
+                totalFavorites: totalFavs,
+            }));
+
+            // Fetch received contacts using the helper
+            const contacts = await getContactsReceived();
+            const pending = contacts.filter((c: any) => c.status === 'PENDING').length;
+            setStats(prev => ({ ...prev, totalContacts: pending }));
+
         } catch (err) {
             console.error('Error loading pro dashboard:', err);
         } finally {
@@ -172,8 +164,8 @@ export default function ProDashboardPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${prop.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                                                prop.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-gray-100 text-gray-600'
+                                            prop.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-gray-100 text-gray-600'
                                             }`}>
                                             {prop.status === 'ACTIVE' ? 'Actif' : prop.status === 'PENDING' ? 'En attente' : prop.status}
                                         </span>

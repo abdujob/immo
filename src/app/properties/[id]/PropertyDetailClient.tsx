@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Property, parseImages, formatPrice, submitReview } from "@/lib/api";
+import { Property, parseImages, formatPrice, submitReview, sendContact } from "@/lib/api";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/lib/auth-context";
@@ -39,9 +39,8 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
     const [contactForm, setContactForm] = useState({
         message: '',
         phone: ''
-});
+    });
 
-    // Reviews State
     const [reviews, setReviews] = useState<any[]>(property.reviews || []);
     const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
     const [reviewLoading, setReviewLoading] = useState(false);
@@ -59,7 +58,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                 title: "Connexion requise",
                 description: "Connectez-vous pour ajouter aux favoris.",
                 variant: "destructive"
-});
+            });
             return;
         }
         await toggleFavorite(property.id);
@@ -70,7 +69,10 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
             navigator.share({
                 title: property.title,
                 url: window.location.href
-});
+            }).catch(() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast({ title: "✅ Lien copié" });
+            });
         } else {
             navigator.clipboard.writeText(window.location.href);
             toast({ title: "✅ Lien copié dans le presse-papiers" });
@@ -83,25 +85,26 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
             toast({ title: "Connexion requise", description: "Connectez-vous pour envoyer un message.", variant: "destructive" });
             return;
         }
-        if (!contactForm.message.trim()) return;
+
+        const message = contactForm.message.trim();
+        if (message.length < 10) {
+            toast({
+                title: "Message trop court",
+                description: "Le message doit contenir au moins 10 caractères.",
+                variant: "destructive"
+            });
+            return;
+        }
 
         setContactLoading(true);
         try {
-            const bodyPayload: any = {
-                propertyId: property.id,
-                message: contactForm.message
-};
-            if (contactForm.phone && contactForm.phone.trim() !== '') {
-                bodyPayload.phone = contactForm.phone;
-            }
+            const success = await sendContact(
+                property.id,
+                message,
+                contactForm.phone.trim() || undefined
+            );
 
-            const res = await fetch(`${API_URL}/contacts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-                body: JSON.stringify(bodyPayload)
-});
-
-            if (!res.ok) throw new Error('Erreur envoi');
+            if (!success) throw new Error('Erreur envoi');
 
             setContactSent(true);
             setContactForm({ message: '', phone: '' });
@@ -126,7 +129,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
             propertyId: property.id,
             rating: reviewForm.rating,
             comment: reviewForm.comment
-});
+        });
 
         setReviewLoading(false);
 

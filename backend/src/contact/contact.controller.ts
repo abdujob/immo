@@ -27,19 +27,24 @@ export class ContactController {
     @UsePipes(new ZodValidationPipe(CreateContactSchema))
     @ApiOperation({ summary: 'Créer une demande de contact' })
     create(@Request() req, @Body() createContactDto: CreateContactDto) {
-        return this.contactService.create(req.user.userId, createContactDto);
+        console.log('DEBUG: Contact created by user:', {
+            id: req.user?.id,
+            email: req.user?.email,
+            keys: req.user ? Object.keys(req.user) : 'null'
+        });
+        return this.contactService.create(req.user.id, createContactDto);
     }
 
     @Get('received')
     @ApiOperation({ summary: 'Obtenir les demandes de contact reçues' })
     findAllReceived(@Request() req) {
-        return this.contactService.findAllReceived(req.user.userId);
+        return this.contactService.findAllReceived(req.user.id);
     }
 
     @Get('sent')
     @ApiOperation({ summary: 'Obtenir les demandes de contact envoyées' })
     findAllSent(@Request() req) {
-        return this.contactService.findAllSent(req.user.userId);
+        return this.contactService.findAllSent(req.user.id);
     }
 
     @Patch(':id/status')
@@ -49,6 +54,6 @@ export class ContactController {
         @Request() req,
         @Body('status') status: string,
     ) {
-        return this.contactService.updateStatus(id, req.user.userId, status);
+        return this.contactService.updateStatus(id, req.user.id, status);
     }
 }

@@ -25,7 +25,7 @@ interface PropertyCardProps {
         hasPool?: boolean;
         city: string;
         district?: string;
-        images: string | string[];
+        images?: string | string[];
         featured?: boolean;
         owner: {
             firstName: string;

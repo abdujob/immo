@@ -49,7 +49,7 @@ export class AgencyController {
     @ApiBearerAuth()
     @ApiOperation({ summary: "Mettre à jour les informations de l'agence" })
     update(@Param('id') id: string, @Request() req, @Body() dto: UpdateAgencyDto) {
-        return this.agencyService.update(id, req.user.userId, dto);
+        return this.agencyService.update(id, req.user.id, dto);
     }
 
     @Patch(':id/logo')
@@ -65,7 +65,7 @@ export class AgencyController {
     ) {
         if (!file) throw new BadRequestException('Image requise');
         const logoPath = `/uploads/${file.filename}`;
-        return this.agencyService.updateLogo(id, req.user.userId, logoPath);
+        return this.agencyService.updateLogo(id, req.user.id, logoPath);
     }
 
     // ─── POST (Création Agence) ──────────────────────────────────────────────
@@ -75,6 +75,6 @@ export class AgencyController {
     @ApiBearerAuth()
     @ApiOperation({ summary: "Créer une nouvelle agence (Onboarding)" })
     create(@Request() req, @Body() dto: CreateAgencyDto) {
-        return this.agencyService.create(req.user.userId, dto);
+        return this.agencyService.create(req.user.id, dto);
     }
 }

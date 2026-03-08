@@ -55,6 +55,6 @@ export class UserController {
     @Get('my-agency')
     @ApiOperation({ summary: 'Obtenir l\'agence de l\'utilisateur connecté' })
     getMyAgency(@Request() req) {
-        return this.agencyService.findByAgentId(req.user.userId);
+        return this.agencyService.findByAgentId(req.user.id);
     }
 }

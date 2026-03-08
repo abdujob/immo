@@ -4,9 +4,7 @@ import { useState, useEffect } from "react";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { Heart, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { Property } from "@/lib/api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { Property, getFavorites } from "@/lib/api";
 
 export default function DashboardFavoritesPage() {
     const { isAuthenticated, user } = useAuth();
@@ -23,14 +21,8 @@ export default function DashboardFavoritesPage() {
 
     const fetchFavorites = async () => {
         try {
-            const res = await fetch(`${API_URL}/favorites`, {
-                credentials: 'include'
-            });
-            if (res.ok) {
-                const data = await res.json();
-                // Assurez-vous que l'API retourne la propriété complète dans data.property
-                setFavorites(data.map((fav: any) => fav.property));
-            }
+            const data = await getFavorites();
+            setFavorites(data);
         } catch (error) {
             console.error("Failed to fetch favorites:", error);
         } finally {

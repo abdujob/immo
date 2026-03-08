@@ -117,7 +117,7 @@ export async function getProperties(page = 1, limit = 20): Promise<Property[]> {
     try {
         const res = await fetch(`${API_BASE_URL}/properties?page=${page}&limit=${limit}`, {
             cache: 'no-store'
-});
+        });
         if (!res.ok) throw new Error('Erreur serveur');
         const json: PaginatedProperties = await res.json();
         return json.data ?? [];
@@ -142,10 +142,10 @@ export async function getPaginatedProperties(
             ...Object.fromEntries(
                 Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
             )
-});
+        });
         const res = await fetch(`${API_BASE_URL}/properties?${params}`, {
             cache: 'no-store'
-});
+        });
         if (!res.ok) throw new Error('Erreur serveur');
         return await res.json();
     } catch (error) {
@@ -161,7 +161,7 @@ export async function getPropertyById(id: string): Promise<Property | null> {
     try {
         const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
             cache: 'no-store'
-});
+        });
         if (!res.ok) return null;
         return await res.json();
     } catch (error) {
@@ -193,7 +193,7 @@ export async function getRecentProperties(limit = 8): Promise<Property[]> {
     try {
         const res = await fetch(`${API_BASE_URL}/properties/recent?limit=${limit}`, {
             next: { revalidate: 60 }
-});
+        });
         if (!res.ok) throw new Error('Erreur serveur');
         return await res.json();
     } catch (error) {
@@ -209,7 +209,7 @@ export async function getSimilarProperties(propertyId: string, limit = 3): Promi
     try {
         const res = await fetch(`${API_BASE_URL}/properties/${propertyId}/similar?limit=${limit}`, {
             cache: 'no-store'
-});
+        });
         if (!res.ok) throw new Error('Erreur serveur');
         return await res.json();
     } catch (error) {
@@ -229,7 +229,7 @@ export async function getMyProperties(): Promise<Property[]> {
             headers: getAuthHeaders(),
             credentials: 'include',
             cache: 'no-store'
-});
+        });
         if (!res.ok) return [];
         const data = await res.json();
         return data;
@@ -249,9 +249,9 @@ export async function updatePropertyStatus(id: string, status: string): Promise<
         const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
             method: 'PATCH',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-credentials: 'include',
+            credentials: 'include',
             body: JSON.stringify({ status })
-});
+        });
         return res.ok;
     } catch {
         return false;
@@ -268,9 +268,9 @@ export async function updatePropertyFeatured(id: string, featured: boolean): Pro
         const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
             method: 'PATCH',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-credentials: 'include',
+            credentials: 'include',
             body: JSON.stringify({ featured })
-});
+        });
         return res.ok;
     } catch {
         return false;
@@ -300,7 +300,7 @@ export async function searchProperties(filters: SearchFilters): Promise<Property
 
         const res = await fetch(`${API_BASE_URL}/search?${params}`, {
             cache: 'no-store'
-});
+        });
         if (!res.ok) throw new Error('Erreur serveur');
         return await res.json();
     } catch (error) {
@@ -318,7 +318,7 @@ export async function getAgencies(): Promise<Agency[]> {
     try {
         const res = await fetch(`${API_BASE_URL}/agencies`, {
             next: { revalidate: 300 }
-});
+        });
         if (!res.ok) throw new Error('Erreur serveur');
         return await res.json();
     } catch (error) {
@@ -334,7 +334,7 @@ export async function getAgencyById(id: string): Promise<any> {
     try {
         const res = await fetch(`${API_BASE_URL}/agencies/${id}`, {
             next: { revalidate: 60 }
-});
+        });
         if (!res.ok) throw new Error('Erreur serveur');
         return await res.json();
     } catch (error) {
@@ -357,7 +357,7 @@ export async function addFavorite(propertyId: string): Promise<boolean> {
             method: 'POST',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include',
             body: JSON.stringify({ propertyId })
-});
+        });
         return res.ok;
     } catch (error) {
         console.error('addFavorite error:', error);
@@ -376,7 +376,7 @@ export async function removeFavorite(propertyId: string): Promise<boolean> {
         const res = await fetch(`${API_BASE_URL}/favorites/${propertyId}`, {
             method: 'DELETE',
             credentials: 'include'
-});
+        });
         return res.ok;
     } catch (error) {
         console.error('removeFavorite error:', error);
@@ -395,7 +395,7 @@ export async function getFavorites(): Promise<Property[]> {
         const res = await fetch(`${API_BASE_URL}/favorites`, {
             credentials: 'include',
             cache: 'no-store'
-});
+        });
         if (!res.ok) return [];
 
         const data = await res.json();
@@ -478,6 +478,7 @@ export function getImageUrl(path: string): string {
     return `${API_BASE_URL}${path}`;
 }
 
+
 // ==============================
 // CONTACT / MESSAGING
 // ==============================
@@ -492,9 +493,9 @@ export async function sendContact(propertyId: string, message: string, phone?: s
         const res = await fetch(`${API_BASE_URL}/contacts`, {
             method: 'POST',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-credentials: 'include',
+            credentials: 'include',
             body: JSON.stringify({ propertyId, message, phone })
-});
+        });
         return res.ok;
     } catch {
         return false;
@@ -509,8 +510,9 @@ export async function getContactsReceived(): Promise<any[]> {
     if (!user) return [];
     try {
         const res = await fetch(`${API_BASE_URL}/contacts/received`, {
+            headers: getAuthHeaders(),
             credentials: 'include'
-});
+        });
         return res.ok ? res.json() : [];
     } catch {
         return [];
@@ -525,14 +527,14 @@ export async function getContactsSent(): Promise<any[]> {
     if (!user) return [];
     try {
         const res = await fetch(`${API_BASE_URL}/contacts/sent`, {
+            headers: getAuthHeaders(),
             credentials: 'include'
-});
+        });
         return res.ok ? res.json() : [];
     } catch {
         return [];
     }
 }
-
 /**
  * Update contact status (PENDING | SEEN | REPLIED | CLOSED)
  */
@@ -543,9 +545,9 @@ export async function updateContactStatus(contactId: string, status: string): Pr
         const res = await fetch(`${API_BASE_URL}/contacts/${contactId}/status`, {
             method: 'PATCH',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-credentials: 'include',
+            credentials: 'include',
             body: JSON.stringify({ status })
-});
+        });
         return res.ok;
     } catch {
         return false;
@@ -570,9 +572,9 @@ export async function submitReview(data: {
         const res = await fetch(`${API_BASE_URL}/reviews`, {
             method: 'POST',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-credentials: 'include',
+            credentials: 'include',
             body: JSON.stringify(data)
-});
+        });
         return res.ok;
     } catch {
         return false;
@@ -592,5 +594,53 @@ export async function getStats(): Promise<GlobalStats> {
     } catch (error) {
         console.error('Error fetching stats:', error);
         return { propertiesCount: 0, agenciesCount: 0, usersCount: 0 };
+    }
+}
+// ─── NOTIFICATIONS ─────────────────────────────────────────────────────────────
+
+/**
+ * Get user notifications
+ */
+export async function getNotifications(): Promise<any[]> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/notifications`, {
+            headers: getAuthHeaders(),
+            credentials: 'include'
+        });
+        return res.ok ? res.json() : [];
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Mark a single notification as read
+ */
+export async function markNotificationAsRead(id: string): Promise<boolean> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+            method: 'PATCH',
+            headers: getAuthHeaders(),
+            credentials: 'include'
+        });
+        return res.ok;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Mark all notifications as read
+ */
+export async function markAllNotificationsAsRead(): Promise<boolean> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+            method: 'PATCH',
+            headers: getAuthHeaders(),
+            credentials: 'include'
+        });
+        return res.ok;
+    } catch {
+        return false;
     }
 }
