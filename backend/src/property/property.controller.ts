@@ -77,6 +77,14 @@ export class PropertyController {
 
             const finalDto: any = { ...createPropertyDto };
 
+            // Set default values for optional fields required by Prisma
+            if (!finalDto.title) {
+                finalDto.title = '';
+            }
+            if (!finalDto.description) {
+                finalDto.description = '';
+            }
+
             // Set default status to ACTIVE if not provided
             if (!finalDto.status) {
                 finalDto.status = 'ACTIVE';
