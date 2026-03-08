@@ -30,6 +30,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { ZodQueryPipe } from '../common/pipes/zod-query.pipe';
 import { ZodError } from 'zod';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { multerConfig } from '../config/multer.config';
@@ -104,7 +105,7 @@ export class PropertyController {
     }
 
     @Get()
-    @UsePipes(new ZodValidationPipe(PropertyFilterSchema))
+    @UsePipes(new ZodQueryPipe(PropertyFilterSchema))
     @ApiOperation({ summary: 'Lister toutes les propriétés avec filtres' })
     findAll(@Query() filters: PropertyFilterDto) {
         return this.propertyService.findAll(filters);
