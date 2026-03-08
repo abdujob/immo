@@ -5,6 +5,7 @@ export const CreateContactSchema = z.object({
     message: z.string().min(10, 'Le message doit contenir au moins 10 caractères'),
     phone: z.string().optional(),
     email: z.string().email('Email invalide').optional(),
+    parentId: z.string().uuid().optional(),
 });
 
 export type CreateContactDto = z.infer<typeof CreateContactSchema>;

@@ -6,145 +6,180 @@ import { CreateContactDto } from './contact.dto';
 export class ContactService {
     constructor(private prisma: PrismaService) { }
 
-    async create(userId: string, dto: CreateContactDto) {
+    async create(senderId: string, dto: CreateContactDto) {
         // Check if property exists
         const property = await this.prisma.property.findUnique({
             where: { id: dto.propertyId },
-            include: {
-                owner: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true,
-                    },
-                },
-            },
+            select: { id: true, title: true, ownerId: true }
         });
 
         if (!property) {
             throw new NotFoundException('Propriété non trouvée');
         }
 
+        // Determine recipient
+        let recipientId = property.ownerId;
+
+        // If it's a reply (parentId provided), the recipient is the sender of the parent message 
+        // (unless the current sender IS that person, then it's the recipient of the parent)
+        if (dto.parentId) {
+            const parent = await this.prisma.contact.findUnique({
+                where: { id: dto.parentId }
+            });
+            if (parent) {
+                recipientId = parent.senderId === senderId ? parent.recipientId : parent.senderId;
+            }
+        }
+
         const contact = await this.prisma.contact.create({
             data: {
-                ...dto,
-                senderId: userId,
+                message: dto.message,
+                phone: dto.phone,
+                email: dto.email,
+                propertyId: dto.propertyId,
+                senderId: senderId,
+                recipientId: recipientId,
+                parentId: dto.parentId,
+                status: 'PENDING'
             },
             include: {
                 sender: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true,
-                        phone: true,
-                    },
+                    select: { id: true, firstName: true, lastName: true, avatar: true }
                 },
                 property: {
-                    include: {
-                        owner: {
-                            select: {
-                                id: true,
-                                firstName: true,
-                                lastName: true,
-                            },
-                        },
-                    },
-                },
-            },
+                    select: { id: true, title: true, city: true }
+                }
+            }
         });
 
-        // Create notification for property owner
-        await this.prisma.notification.create({
-            data: {
-                userId: property.ownerId,
-                type: 'CONTACT',
-                message: `Nouvelle demande de contact pour "${property.title}"`,
-            },
-        });
+        // Notify recipient if it's not the owner themselves
+        if (recipientId !== senderId) {
+            await this.prisma.notification.create({
+                data: {
+                    userId: recipientId,
+                    type: 'CONTACT',
+                    message: `Nouveau message pour "${property.title}"`,
+                },
+            });
+        }
 
         return contact;
     }
 
-    async findAllReceived(userId: string) {
+    /**
+     * Get unique conversation threads for a user
+     */
+    async getConversations(userId: string) {
+        // Find all contacts where user is sender or recipient
         const contacts = await this.prisma.contact.findMany({
             where: {
-                property: {
-                    ownerId: userId,
-                },
+                OR: [
+                    { senderId: userId },
+                    { recipientId: userId }
+                ]
             },
             include: {
-                sender: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true,
-                        phone: true,
-                    },
-                },
-                property: {
-                    select: {
-                        id: true,
-                        title: true,
-                        type: true,
-                        price: true,
-                        city: true,
-                    },
-                },
+                sender: { select: { id: true, firstName: true, lastName: true, avatar: true } },
+                recipient: { select: { id: true, firstName: true, lastName: true, avatar: true } },
+                property: { select: { id: true, title: true, city: true } }
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: 'desc' }
         });
 
-        return contacts;
+        // Group by (OtherUser, Property)
+        const threadsMap = new Map<string, any>();
+
+        for (const contact of contacts) {
+            const otherUser = contact.senderId === userId ? contact.recipient : contact.sender;
+            const threadKey = `${otherUser.id}-${contact.propertyId}`;
+
+            if (!threadsMap.has(threadKey)) {
+                threadsMap.set(threadKey, {
+                    id: threadKey,
+                    otherUser,
+                    property: contact.property,
+                    lastMessage: contact,
+                    unreadCount: contact.recipientId === userId && contact.status === 'PENDING' ? 1 : 0
+                });
+            } else {
+                if (contact.recipientId === userId && contact.status === 'PENDING') {
+                    threadsMap.get(threadKey).unreadCount++;
+                }
+            }
+        }
+
+        return Array.from(threadsMap.values());
     }
 
-    async findAllSent(userId: string) {
-        const contacts = await this.prisma.contact.findMany({
+    /**
+     * Get all messages in a specific thread
+     */
+    async getThreadMessages(userId: string, otherUserId: string, propertyId: string) {
+        // Mark messages as SEEN
+        await this.prisma.contact.updateMany({
             where: {
-                senderId: userId,
+                propertyId,
+                senderId: otherUserId,
+                recipientId: userId,
+                status: 'PENDING'
             },
-            include: {
-                property: {
-                    include: {
-                        owner: {
-                            select: {
-                                id: true,
-                                firstName: true,
-                                lastName: true,
-                                phone: true,
-                            },
-                        },
-                    },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
+            data: { status: 'SEEN' }
         });
 
-        return contacts;
+        return this.prisma.contact.findMany({
+            where: {
+                propertyId,
+                AND: [
+                    { OR: [{ senderId: userId }, { recipientId: userId }] },
+                    { OR: [{ senderId: otherUserId }, { recipientId: otherUserId }] }
+                ]
+            },
+            include: {
+                sender: { select: { id: true, firstName: true, lastName: true, avatar: true } }
+            },
+            orderBy: { createdAt: 'asc' }
+        });
     }
 
     async updateStatus(id: string, userId: string, status: string) {
         const contact = await this.prisma.contact.findUnique({
-            where: { id },
-            include: {
-                property: true,
-            },
+            where: { id }
         });
 
-        if (!contact) {
-            throw new NotFoundException('Contact non trouvé');
-        }
+        if (!contact) throw new NotFoundException('Contact non trouvé');
 
-        // Only property owner can update status
-        if (contact.property.ownerId !== userId) {
+        // Either sender or recipient can close a thread / update status 
+        // (Simplified logic: allow if involved)
+        if (contact.senderId !== userId && contact.recipientId !== userId) {
             throw new NotFoundException('Non autorisé');
         }
 
         return this.prisma.contact.update({
             where: { id },
             data: { status },
+        });
+    }
+
+    // Keep these for backward compatibility or simple lists
+    async findAllReceived(userId: string) {
+        return this.prisma.contact.findMany({
+            where: { recipientId: userId },
+            include: {
+                sender: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+                property: { select: { id: true, title: true, type: true, price: true, city: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    async findAllSent(userId: string) {
+        return this.prisma.contact.findMany({
+            where: { senderId: userId },
+            include: {
+                recipient: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+                property: { select: { id: true, title: true, type: true, price: true, city: true } }
+            },
+            orderBy: { createdAt: 'desc' }
         });
     }
 }

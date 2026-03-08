@@ -486,7 +486,7 @@ export function getImageUrl(path: string): string {
 /**
  * Send a contact message for a property
  */
-export async function sendContact(propertyId: string, message: string, phone?: string): Promise<boolean> {
+export async function sendContact(propertyId: string, message: string, phone?: string, parentId?: string): Promise<boolean> {
     const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     if (!user) return false;
     try {
@@ -494,11 +494,43 @@ export async function sendContact(propertyId: string, message: string, phone?: s
             method: 'POST',
             headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             credentials: 'include',
-            body: JSON.stringify({ propertyId, message, phone })
+            body: JSON.stringify({ propertyId, message, phone, parentId })
         });
         return res.ok;
     } catch {
         return false;
+    }
+}
+
+/**
+ * Get unique conversation threads
+ */
+export async function getConversations(): Promise<any[]> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/contacts/conversations`, {
+            headers: getAuthHeaders(),
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        return res.ok ? res.json() : [];
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Get messages for a specific thread
+ */
+export async function getThreadMessages(otherUserId: string, propertyId: string): Promise<any[]> {
+    try {
+        const res = await fetch(`${API_BASE_URL}/contacts/thread/${otherUserId}/${propertyId}`, {
+            headers: getAuthHeaders(),
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        return res.ok ? res.json() : [];
+    } catch {
+        return [];
     }
 }
 

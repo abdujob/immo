@@ -33,6 +33,7 @@ model User {
   properties    Property[] // Properties owned by this user
   favorites     Favorite[]
   contactsSent  Contact[]  @relation("ContactSender")
+  contactsReceived Contact[] @relation("ContactRecipient")
   reviews       Review[]
   notifications Notification[]
 }
@@ -151,6 +152,14 @@ model Contact {
   // Relations
   senderId   String
   sender     User     @relation("ContactSender", fields: [senderId], references: [id])
+  
+  recipientId String
+  recipient   User     @relation("ContactRecipient", fields: [recipientId], references: [id])
+  
+  parentId    String?
+  parent      Contact?  @relation("ContactReplies", fields: [parentId], references: [id])
+  replies     Contact[] @relation("ContactReplies")
+
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }

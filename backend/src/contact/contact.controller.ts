@@ -35,6 +35,22 @@ export class ContactController {
         return this.contactService.create(req.user.id, createContactDto);
     }
 
+    @Get('conversations')
+    @ApiOperation({ summary: 'Obtenir les conversations (fils de discussion) de l\'utilisateur' })
+    getConversations(@Request() req) {
+        return this.contactService.getConversations(req.user.id);
+    }
+
+    @Get('thread/:otherUserId/:propertyId')
+    @ApiOperation({ summary: 'Obtenir tous les messages d\'une discussion spécifique' })
+    getThreadMessages(
+        @Request() req,
+        @Param('otherUserId') otherUserId: string,
+        @Param('propertyId') propertyId: string
+    ) {
+        return this.contactService.getThreadMessages(req.user.id, otherUserId, propertyId);
+    }
+
     @Get('received')
     @ApiOperation({ summary: 'Obtenir les demandes de contact reçues' })
     findAllReceived(@Request() req) {
