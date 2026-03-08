@@ -73,7 +73,7 @@ export default function MessagesPage() {
 
     useEffect(() => {
         if (user) fetchConversations();
-    }, [user]);
+    }, [user, targetPropertyId, targetUserId]);
 
     useEffect(() => {
         if (activeThread) {
@@ -94,7 +94,7 @@ export default function MessagesPage() {
             setConversations(data);
 
             // Auto-select conversation based on query params
-            if (targetPropertyId && targetUserId && !activeThread) {
+            if (targetPropertyId && targetUserId) {
                 const thread = data.find((c: Conversation) =>
                     c.property.id === targetPropertyId && c.otherUser.id === targetUserId
                 );

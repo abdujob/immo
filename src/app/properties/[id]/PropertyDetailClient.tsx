@@ -519,6 +519,14 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                                 onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
                                                 required
                                             />
+                                            <div className="flex justify-between mt-1">
+                                                <p className="text-[10px] text-gray-400">
+                                                    {contactForm.message.length > 0 ? `${contactForm.message.length} caractères` : 'Min. 1 caractère'}
+                                                </p>
+                                                {contactForm.message.length > 0 && contactForm.message.length < 5 && (
+                                                    <p className="text-[10px] text-blue-500 italic">Message court autorisé</p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div>
                                             <Label htmlFor="contact-phone">Votre téléphone (optionnel)</Label>

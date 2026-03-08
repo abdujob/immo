@@ -144,12 +144,21 @@ export function Navbar() {
                                                 </div>
                                             ) : (
                                                 notifications.map((notif: any) => {
-                                                    const handleClick = () => {
+                                                    const handleSelect = () => {
                                                         if (!notif.read) markAsRead(notif.id);
 
-                                                        if (notif.type === 'CONTACT' && notif.data) {
-                                                            const { propertyId, senderId } = notif.data;
-                                                            router.push(`/dashboard/messages?propertyId=${propertyId}&senderId=${senderId}`);
+                                                        let meta = notif.data;
+                                                        if (typeof meta === 'string') {
+                                                            try { meta = JSON.parse(meta); } catch (e) { }
+                                                        }
+
+                                                        if (notif.type === 'CONTACT' && meta) {
+                                                            const { propertyId, senderId } = meta;
+                                                            if (propertyId && senderId) {
+                                                                router.push(`/dashboard/messages?propertyId=${propertyId}&senderId=${senderId}`);
+                                                            } else {
+                                                                router.push('/dashboard/messages');
+                                                            }
                                                         }
                                                     };
 
@@ -157,7 +166,7 @@ export function Navbar() {
                                                         <DropdownMenuItem
                                                             key={notif.id}
                                                             className={`flex flex-col items-start p-3 cursor-pointer border-b last:border-0 ${notif.read ? 'opacity-70' : 'bg-blue-50/50'}`}
-                                                            onClick={handleClick}
+                                                            onSelect={handleSelect}
                                                         >
                                                             <div className="flex w-full justify-between items-start mb-1">
                                                                 <span className="text-xs font-semibold text-gray-500">{notif.type}</span>
