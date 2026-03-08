@@ -27,7 +27,7 @@ export class ContactService {
                 where: { id: dto.parentId }
             });
             if (parent) {
-                recipientId = parent.senderId === senderId ? parent.recipientId : parent.senderId;
+                recipientId = parent.senderId === senderId ? (parent.recipientId ?? property.ownerId) : parent.senderId;
             }
         }
 
