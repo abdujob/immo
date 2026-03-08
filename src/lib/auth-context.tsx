@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!res.ok) throw new Error('Identifiants incorrects');
 
             const data = await res.json();
+            localStorage.setItem('token', data.access_token);
             localStorage.setItem('user', JSON.stringify(data.user));
             setUser(data.user);
             return { success: true };
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             console.error('Logout error', e);
         }
+        localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
     };

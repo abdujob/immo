@@ -1,5 +1,16 @@
 // API Service for ImmoSénégal Frontend
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+/**
+ * Helper to get authentication headers
+ */
+function getAuthHeaders(headers: Record<string, string> = {}) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    return {
+        ...headers,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+}
+
 
 export interface Property {
     id: string;
@@ -215,6 +226,7 @@ export async function getMyProperties(): Promise<Property[]> {
         const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
         if (!user) return [];
         const res = await fetch(`${API_BASE_URL}/properties/my-properties`, {
+            headers: getAuthHeaders(),
             credentials: 'include',
             cache: 'no-store'
 });
@@ -236,7 +248,7 @@ export async function updatePropertyStatus(id: string, status: string): Promise<
     try {
         const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
 credentials: 'include',
             body: JSON.stringify({ status })
 });
@@ -255,7 +267,7 @@ export async function updatePropertyFeatured(id: string, featured: boolean): Pro
     try {
         const res = await fetch(`${API_BASE_URL}/properties/${id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
 credentials: 'include',
             body: JSON.stringify({ featured })
 });
@@ -343,7 +355,7 @@ export async function addFavorite(propertyId: string): Promise<boolean> {
 
         const res = await fetch(`${API_BASE_URL}/favorites`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }), credentials: 'include',
             body: JSON.stringify({ propertyId })
 });
         return res.ok;
@@ -479,7 +491,7 @@ export async function sendContact(propertyId: string, message: string, phone?: s
     try {
         const res = await fetch(`${API_BASE_URL}/contacts`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
 credentials: 'include',
             body: JSON.stringify({ propertyId, message, phone })
 });
@@ -530,7 +542,7 @@ export async function updateContactStatus(contactId: string, status: string): Pr
     try {
         const res = await fetch(`${API_BASE_URL}/contacts/${contactId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
 credentials: 'include',
             body: JSON.stringify({ status })
 });
@@ -557,7 +569,7 @@ export async function submitReview(data: {
     try {
         const res = await fetch(`${API_BASE_URL}/reviews`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
 credentials: 'include',
             body: JSON.stringify(data)
 });

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import * as express from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
@@ -20,13 +21,21 @@ async function bootstrap() {
   // Normalize by removing trailing slash for strict CORS matching
   const origin = frontendUrl.endsWith('/') ? frontendUrl.slice(0, -1) : frontendUrl;
 
+  console.log('CORS configured for:', [origin, 'http://localhost:3000']);
+
   app.enableCors({
-    origin: [origin, 'http://localhost:3000'],
+    origin: [origin, 'http://localhost:3000', 'https://immo-six-iota.vercel.app'],
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization',
   });
 
   // Use Helmet
   app.use(helmet());
+
+  // Body Parser Middlewares
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   // Cookie Parser
   app.use(cookieParser());

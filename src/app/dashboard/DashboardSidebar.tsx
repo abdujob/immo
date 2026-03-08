@@ -19,7 +19,7 @@ const menuItems = [
     { href: "/dashboard/properties", icon: Home, label: "Mes annonces" },
     { href: "/dashboard/messages", icon: MessageSquare, label: "Messages" },
     { href: "/dashboard/profile", icon: User, label: "Profil" },
-    { href: "/dashboard/settings", icon: Settings, label: "Paramètres" },
+    { href: "/dashboard/profile", icon: Settings, label: "Paramètres" },
 ];
 
 export default function DashboardSidebar() {

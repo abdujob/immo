@@ -60,7 +60,8 @@ export default function LoginPage() {
 
             const data = await response.json();
 
-            // Store User (Note: Token is now in HttpOnly Cookie)
+            // Store Token & User (Note: Token is also in HttpOnly Cookie)
+            localStorage.setItem("token", data.access_token);
             localStorage.setItem("user", JSON.stringify(data.user));
 
             // Redirect based on role

@@ -73,7 +73,7 @@ export default function NewPropertyPage() {
         hasAirCon: false,
         hasGuardian: false,
         images: []
-});
+    });
 
     const updateFormData = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -127,16 +127,27 @@ export default function NewPropertyPage() {
                 submitData.append('images', image);
             });
 
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
             const response = await fetch(`${API_BASE_URL}/properties`, {
                 method: 'POST',
                 credentials: 'include',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: submitData
             });
 
             if (response.ok) {
                 router.push('/dashboard/properties');
             } else {
-                alert('Erreur lors de la publication de l\'annonce');
+                const errorData = await response.json();
+                console.error('Validation errors:', errorData);
+                if (errorData.errors && Array.isArray(errorData.errors)) {
+                    const messages = errorData.errors.map(e => e.message).join('\n');
+                    alert('Erreur de validation :\n' + messages);
+                } else {
+                    alert(errorData.message || 'Erreur lors de la publication de l\'annonce');
+                }
             }
         } catch (error) {
             console.error('Error submitting property:', error);

@@ -71,7 +71,7 @@ export function BookingModal({ isOpen, onClose, coiffeur, selectedServices, tota
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    
+
                 },
                 body: JSON.stringify({
                     coiffeurId: coiffeur.id,
@@ -101,6 +101,7 @@ export function BookingModal({ isOpen, onClose, coiffeur, selectedServices, tota
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
+                <DialogTitle className="sr-only">Réservation - {coiffeur.firstName} {coiffeur.lastName}</DialogTitle>
                 <div className="bg-primary p-6 text-white text-center">
                     <h2 className="text-2xl font-bold">Réservation</h2>
                     <p className="opacity-90">{coiffeur.firstName} {coiffeur.lastName}</p>

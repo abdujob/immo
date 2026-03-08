@@ -66,6 +66,12 @@ export class PropertyController {
         };
 
         try {
+            // Log received data for debugging
+            console.log('Received form data:', {
+                bodyKeys: Object.keys(body),
+                bodyPreview: { ...body, description: body.description?.substring(0, 50) + '...' }
+            });
+
             const createPropertyDto = CreatePropertySchema.parse(parsedBody);
 
             const finalDto: any = { ...createPropertyDto };
@@ -77,8 +83,16 @@ export class PropertyController {
             return this.propertyService.create(req.user.id, finalDto);
         } catch (error) {
             if (error instanceof ZodError) {
-                throw new BadRequestException({ message: 'Validation failed', errors: (error as any).issues });
+                console.error('Validation Error for property creation:', JSON.stringify(error.issues, null, 2));
+                throw new BadRequestException({
+                    message: 'Validation failed',
+                    errors: error.issues.map(issue => ({
+                        field: issue.path.join('.'),
+                        message: issue.message,
+                    }))
+                });
             }
+            console.error('Unexpected error:', error);
             throw error;
         }
     }
