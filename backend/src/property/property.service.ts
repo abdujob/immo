@@ -11,12 +11,19 @@ export class PropertyService {
     constructor(private prisma: PrismaService) { }
 
     async create(userId: string, dto: CreatePropertyDto) {
+        // Ensure all required string fields have values
+        const data = {
+            ...dto,
+            title: dto.title?.trim() || '',
+            description: dto.description?.trim() || '',
+            ownerId: userId,
+        };
+
         const property = await this.prisma.property.create({
             data: {
-                ...dto,
+                ...data,
                 images: dto['images'] ? JSON.stringify(dto['images']) : null,
-                ownerId: userId,
-            },
+            } as any,
             include: {
                 owner: {
                     select: {

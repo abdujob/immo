@@ -75,20 +75,22 @@ export class PropertyController {
 
             const createPropertyDto = CreatePropertySchema.parse(parsedBody);
 
-            // Ensure all optional required fields have defaults
-            const finalDto = {
+            // Create final DTO with all required fields and defaults
+            const finalDto: any = {
                 ...createPropertyDto,
                 title: createPropertyDto.title || '',
                 description: createPropertyDto.description || '',
-                status: 'ACTIVE' as const,
+                status: 'ACTIVE',
             };
 
-            // Add image paths
-            if (files?.images) {
+            // Add image paths if files exist
+            if (files?.images && files.images.length > 0) {
                 finalDto.images = files.images.map(file => `/uploads/${file.filename}`);
+            } else {
+                finalDto.images = null;
             }
 
-            return this.propertyService.create(req.user.id, finalDto as any);
+            return this.propertyService.create(req.user.id, finalDto);
         } catch (error) {
             if (error instanceof ZodError) {
                 console.error('Validation Error for property creation:', JSON.stringify(error.issues, null, 2));
