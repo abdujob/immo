@@ -91,12 +91,15 @@ export function Navbar() {
             <div className="container mx-auto px-4">
                 <div className="flex h-16 items-center justify-between">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center space-x-2">
+                    <div
+                        onClick={() => router.push('/')}
+                        className="flex items-center space-x-2 cursor-pointer"
+                    >
                         <Building2 className="h-8 w-8 text-blue-600" />
                         <span className="text-2xl font-bold text-gray-900">
                             Immo<span className="text-blue-600">Sénégal</span>
                         </span>
-                    </Link>
+                    </div>
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-6">

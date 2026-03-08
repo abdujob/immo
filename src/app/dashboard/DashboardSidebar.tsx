@@ -36,10 +36,13 @@ export default function DashboardSidebar() {
         <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col">
             {/* Logo */}
             <div className="p-6 border-b border-gray-200">
-                <Link href="/" className="flex items-center gap-2">
+                <div
+                    onClick={() => router.push('/')}
+                    className="flex items-center gap-2 cursor-pointer"
+                >
                     <Building2 className="w-8 h-8 text-blue-600" />
                     <span className="text-xl font-bold text-gray-900">ImmoSénégal</span>
-                </Link>
+                </div>
             </div>
 
             {/* Navigation */}
