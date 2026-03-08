@@ -372,6 +372,301 @@ async function main() {
   });
 
   // ============================================
+  // ADDITIONAL DEMO PROPERTIES
+  // ============================================
+
+  // Villa Ngor with Sea View
+  await prisma.property.create({
+    data: {
+      title: 'Villa avec vue sur l\'océan - Ngor',
+      description: 'Spectaculaire villa d\'architecte avec vue panoramique sur l\'océan. 6 chambres, terrasse infinie, piscine débordante, salle de cinéma. Situation privilégiée sur les hauteurs de Ngor.',
+      type: 'VILLA',
+      transactionType: 'VENTE',
+      price: 250000000,
+      surface: 380,
+      bedrooms: 6,
+      bathrooms: 5,
+      hasGarden: true,
+      hasParking: true,
+      hasPool: true,
+      isFurnished: true,
+      hasAirCon: true,
+      hasGuardian: true,
+      address: 'Route de Ngor',
+      city: 'Dakar',
+      district: 'Ngor',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1570129477492-45a003537e1f?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: true,
+      verified: true,
+      views: 456,
+      ownerId: agentSenImmo.id,
+      agencyId: agencySenImmo.id,
+    },
+  });
+
+  // Luxury Apartment Plateau
+  await prisma.property.create({
+    data: {
+      title: 'Penthouse luxe - Plateau Centre Ville',
+      description: 'Magnifique penthouse haute gamme au dernier étage. 4 chambres, 3 salles de bain, salon double, bibliothèque, terrasse vue panoramique sur Dakar. Ascenseur privé, sécurité 24/24.',
+      type: 'APPARTEMENT',
+      transactionType: 'VENTE',
+      price: 120000000,
+      surface: 250,
+      bedrooms: 4,
+      bathrooms: 3,
+      floor: 10,
+      hasGarden: false,
+      hasParking: true,
+      hasPool: false,
+      isFurnished: true,
+      hasAirCon: true,
+      hasGuardian: true,
+      address: 'Avenue Albert Sarraut',
+      city: 'Dakar',
+      district: 'Plateau',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: true,
+      verified: true,
+      views: 234,
+      ownerId: agentDakar.id,
+      agencyId: agencyDakarHabitat.id,
+    },
+  });
+
+  // Large Terrain Mbao
+  await prisma.property.create({
+    data: {
+      title: 'Terrain lotis 1000m² - Mbao extension',
+      description: 'Grand terrain titré et complètement viabilisé. Idéal pour projet immobilier important. Électricité, eau, route bitumée. Zone en forte appréciation.',
+      type: 'TERRAIN',
+      transactionType: 'VENTE',
+      price: 35000000,
+      surface: 1000,
+      hasGarden: false,
+      hasParking: false,
+      hasPool: false,
+      isFurnished: false,
+      hasAirCon: false,
+      hasGuardian: false,
+      address: 'Mbao extension zone 3',
+      city: 'Dakar',
+      district: 'Mbao',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1500595046891-b45dda4d6cbd?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?w=800&h=600&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: false,
+      verified: true,
+      views: 123,
+      ownerId: individual1.id,
+    },
+  });
+
+  // Modern House Liberté
+  await prisma.property.create({
+    data: {
+      title: 'Maison moderne R+1 - Liberté 6',
+      description: 'Maison contemporaine avec finitions modernes. 4 chambres spacieuses, 3 salles de bain, cuisine américaine équipée, jardin aménagé, garage double. Quartier résidentiel calme.',
+      type: 'MAISON',
+      transactionType: 'VENTE',
+      price: 95000000,
+      surface: 220,
+      bedrooms: 4,
+      bathrooms: 3,
+      hasGarden: true,
+      hasParking: true,
+      hasPool: false,
+      isFurnished: false,
+      hasAirCon: true,
+      hasGuardian: false,
+      address: 'Avenue Moussa Diallo, Liberté 6',
+      city: 'Dakar',
+      district: 'Liberté 6',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1575458495149-7adc08f7cab9?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: true,
+      verified: true,
+      views: 289,
+      ownerId: individual2.id,
+    },
+  });
+
+  // Budget Apartment Medina
+  await prisma.property.create({
+    data: {
+      title: 'Appartement F3 - Medina (Abordable)',
+      description: 'Appartement 3 pièces accessible dans quartier populaire. 2 chambres, salon, cuisine, salle de bain. Immeuble calme, proche transports. Idéal pour première acquisition.',
+      type: 'APPARTEMENT',
+      transactionType: 'VENTE',
+      price: 25000000,
+      surface: 80,
+      bedrooms: 2,
+      bathrooms: 1,
+      floor: 2,
+      hasGarden: false,
+      hasParking: false,
+      hasPool: false,
+      isFurnished: false,
+      hasAirCon: false,
+      hasGuardian: true,
+      address: 'Rue 10, Medina',
+      city: 'Dakar',
+      district: 'Medina',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: false,
+      verified: true,
+      views: 156,
+      ownerId: individual1.id,
+    },
+  });
+
+  // Duplex Luxury Ngor
+  await prisma.property.create({
+    data: {
+      title: 'Duplex de prestige - Ngor Almadies',
+      description: 'Luxueux duplex avec ascenseur privé, piscine sur terrasse, 4 chambres, 3 salles de bain, cuisine professionnelle, cave à vin. Finitions haut de gamme, vue imprenable.',
+      type: 'DUPLEX',
+      transactionType: 'VENTE',
+      price: 180000000,
+      surface: 300,
+      bedrooms: 4,
+      bathrooms: 3,
+      hasGarden: false,
+      hasParking: true,
+      hasPool: true,
+      isFurnished: true,
+      hasAirCon: true,
+      hasGuardian: true,
+      address: 'Cité des Almadies',
+      city: 'Dakar',
+      district: 'Almadies',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: true,
+      verified: true,
+      views: 367,
+      ownerId: agentDakar.id,
+      agencyId: agencyDakarHabitat.id,
+    },
+  });
+
+  // Studio Fann
+  await prisma.property.create({
+    data: {
+      title: 'Studio F1 - Fann (Étudiant)',
+      description: 'Petit studio fonctionnel aux Fann, parfait pour étudiant. Pièce principale avec lit, kitchenette, salle de bain. Chauffage eau, électricité, immeuble sécurisé.',
+      type: 'STUDIO',
+      transactionType: 'LOCATION',
+      price: 120000,
+      surface: 28,
+      bedrooms: 0,
+      bathrooms: 1,
+      floor: 1,
+      hasGarden: false,
+      hasParking: false,
+      hasPool: false,
+      isFurnished: true,
+      hasAirCon: false,
+      hasGuardian: true,
+      address: 'Rue 15, Fann',
+      city: 'Dakar',
+      district: 'Fann',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?q=80&w=1471&auto=format&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: false,
+      verified: true,
+      views: 89,
+      ownerId: agentSenImmo.id,
+      agencyId: agencySenImmo.id,
+    },
+  });
+
+  // Bureau Coworking Point E
+  await prisma.property.create({
+    data: {
+      title: 'Espace de coworking - Point E',
+      description: 'Espaces de travail modernes et flexibles. Accès à salle de réunion, internet haut débit, café gratuit. Parfait pour startups et freelancers. À l\'heure, jour ou mois.',
+      type: 'BUREAU',
+      transactionType: 'LOCATION',
+      price: 50000,
+      surface: 150,
+      rooms: 5,
+      bathrooms: 2,
+      floor: 2,
+      hasGarden: false,
+      hasParking: true,
+      hasPool: false,
+      isFurnished: true,
+      hasAirCon: true,
+      hasGuardian: true,
+      address: 'Rue 1, Point E',
+      city: 'Dakar',
+      district: 'Point E',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1469&auto=format&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: false,
+      verified: true,
+      views: 145,
+      ownerId: individual2.id,
+    },
+  });
+
+  // Commerce Dakar Centre
+  await prisma.property.create({
+    data: {
+      title: 'Local commercial prestige - Centre ville',
+      description: 'Beau local commercial avec grande vitrine, étage arrière, climatisation. Situation de rêve en centre-ville. Parfait pour boutique, restaurant ou agence haute gamme.',
+      type: 'COMMERCE',
+      transactionType: 'LOCATION',
+      price: 1200000,
+      surface: 120,
+      rooms: 3,
+      bathrooms: 2,
+      floor: 0,
+      hasGarden: false,
+      hasParking: false,
+      hasPool: false,
+      isFurnished: false,
+      hasAirCon: true,
+      hasGuardian: true,
+      address: 'Avenue Lamine Guèye',
+      city: 'Dakar',
+      district: 'Centre',
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1582046427495-2acba647bf01?q=80&w=1481&auto=format&fit=crop',
+      ]),
+      status: 'ACTIVE',
+      featured: false,
+      verified: true,
+      views: 234,
+      ownerId: agentDakar.id,
+      agencyId: agencyDakarHabitat.id,
+    },
+  });
+
+  // ============================================
   // CREATE FAVORITES
   // ============================================
 
@@ -410,7 +705,7 @@ async function main() {
   console.log('📊 Created:');
   console.log('  - 2 agencies');
   console.log('  - 5 users (1 admin, 2 agents, 2 individuals)');
-  console.log('  - 8 properties');
+  console.log('  - 18 properties (villas, apartments, houses, studios, duplex, offices, commerce, terrain)');
   console.log('  - 1 favorite');
   console.log('  - 2 reviews');
   console.log('\n🔐 Test credentials:');
