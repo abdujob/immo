@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ type Message = {
     sender: UserBasic;
 };
 
-export default function MessagesPage() {
+function MessagesContent() {
     const { isAuthenticated, user, isLoading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -128,6 +128,7 @@ export default function MessagesPage() {
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!reply.trim() || !activeThread || !user) return;
+
 
         setSending(true);
         try {
@@ -362,5 +363,13 @@ export default function MessagesPage() {
                 </div>
             </Card>
         </div>
+    );
+}
+
+export default function MessagesPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>}>
+            <MessagesContent />
+        </Suspense>
     );
 }

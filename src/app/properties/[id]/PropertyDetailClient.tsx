@@ -96,6 +96,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
             return;
         }
 
+
         setContactLoading(true);
         try {
             const success = await sendContact(
