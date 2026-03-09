@@ -70,4 +70,9 @@ export class AuthController {
     async resetPassword(@Body() dto: ResetPasswordDto) {
         return this.authService.resetPassword(dto);
     }
+
+    @Get('test-mail')
+    async testMail() {
+        return this.authService.testMail();
+    }
 }
