@@ -6,21 +6,27 @@ export class MailService {
   private transporter;
 
   constructor() {
+    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = parseInt(process.env.SMTP_PORT || '465');
+    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      host,
+      port,
+      secure,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 10000,
+      connectionTimeout: 10000, // Increased timeout
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       tls: {
         rejectUnauthorized: false
       }
     });
+
+    console.log(`MailService initialized with ${host}:${port} (secure: ${secure})`);
   }
 
   async testConnection() {
@@ -29,6 +35,8 @@ export class MailService {
       return {
         status: 'Connected',
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || '465',
+        secure: process.env.SMTP_SECURE || 'true (auto)',
         user: process.env.SMTP_USER ? 'Loaded' : 'Missing',
         pass: process.env.SMTP_PASS ? 'Loaded' : 'Missing',
       };
@@ -39,6 +47,7 @@ export class MailService {
         code: error.code,
         command: error.command,
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || '465',
         user: process.env.SMTP_USER ? 'Loaded' : 'Missing',
       };
     }
