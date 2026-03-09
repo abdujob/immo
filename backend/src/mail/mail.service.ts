@@ -18,9 +18,11 @@ export class MailService {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      connectionTimeout: 10000, // Increased timeout
+      // Timeouts settings to prevent hanging
+      connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 15000,
+      family: 4, // Force IPv4 to avoid ENETUNREACH errors on ipv6-limited environments
       tls: {
         rejectUnauthorized: false
       }
