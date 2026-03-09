@@ -26,7 +26,7 @@ export class MailService {
       tls: {
         rejectUnauthorized: false
       }
-    });
+    } as any);
 
     console.log(`MailService initialized with ${host}:${port} (secure: ${secure})`);
   }
