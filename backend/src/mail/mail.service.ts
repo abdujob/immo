@@ -17,7 +17,31 @@ export class MailService {
       connectionTimeout: 5000,
       greetingTimeout: 5000,
       socketTimeout: 10000,
+      tls: {
+        rejectUnauthorized: false
+      }
     });
+  }
+
+  async testConnection() {
+    try {
+      await this.transporter.verify();
+      return {
+        status: 'Connected',
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        user: process.env.SMTP_USER ? 'Loaded' : 'Missing',
+        pass: process.env.SMTP_PASS ? 'Loaded' : 'Missing',
+      };
+    } catch (error) {
+      return {
+        status: 'Failed',
+        error: error.message,
+        code: error.code,
+        command: error.command,
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        user: process.env.SMTP_USER ? 'Loaded' : 'Missing',
+      };
+    }
   }
 
   async sendVerificationEmail(email: string, token: string) {
