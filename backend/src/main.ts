@@ -25,10 +25,22 @@ async function bootstrap() {
   console.log('CORS configured for:', [origin, 'http://localhost:3000']);
 
   app.enableCors({
-    origin: [origin, 'http://localhost:3000', 'https://immo-six-iota.vercel.app'],
+    origin: (requestOrigin, callback) => {
+      if (
+        !requestOrigin ||
+        requestOrigin === 'http://localhost:3000' ||
+        requestOrigin === 'http://localhost:3001' ||
+        requestOrigin.endsWith('.vercel.app') ||
+        requestOrigin === origin
+      ) {
+        callback(null, true);
+      } else {
+        callback(null, false); // Block other origins
+      }
+    },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type,Authorization',
+    allowedHeaders: 'Content-Type,Authorization,Cookie',
   });
 
   // Use Helmet
