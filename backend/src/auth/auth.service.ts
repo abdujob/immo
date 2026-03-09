@@ -82,6 +82,10 @@ export class AuthService {
             throw new UnauthorizedException('Email ou mot de passe invalide');
         }
 
+        if (!user.isVerified) {
+            throw new UnauthorizedException('Veuillez vérifier votre email avant de vous connecter');
+        }
+
         const isMatch = await bcrypt.compare(dto.password, user.password);
         if (!isMatch) {
             throw new UnauthorizedException('Email ou mot de passe invalide');
