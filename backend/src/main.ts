@@ -8,6 +8,12 @@ import { join } from 'path';
 import { AppModule } from './app.module';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as dns from 'dns';
+
+// Force technical priority to IPv4 to fix ENETUNREACH issues on Render
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -66,8 +72,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  // Start on port 4000
-  await app.listen(process.env.PORT || 4000);
+  // Start on port 4000 (bind to 0.0.0.0 to force IPv4)
+  const port = process.env.PORT || 4000;
+  await app.listen(port, '0.0.0.0');
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();
