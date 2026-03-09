@@ -48,10 +48,8 @@ export class AuthService {
             },
         });
 
-        // Send verification email (non-blocking)
-        this.mailService.sendVerificationEmail(user.email, verificationToken).catch(err => {
-            console.error('Initial verification email failed:', err);
-        });
+        // Send verification email
+        await this.mailService.sendVerificationEmail(user.email, verificationToken);
 
         // Generate token
         const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
