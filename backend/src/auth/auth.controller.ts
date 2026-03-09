@@ -1,8 +1,8 @@
-import { Body, Controller, Post, Get, UsePipes, Res, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Post, Get, UsePipes, Res, UseGuards, Request, Query } from '@nestjs/common';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { ZodValidationPipe } from 'nestjs-zod';
 
 @Controller('auth')
@@ -52,5 +52,22 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     getProfile(@Request() req) {
         return req.user;
+    }
+
+    @Get('verify')
+    async verifyEmail(@Query('token') token: string) {
+        return this.authService.verifyEmail(token);
+    }
+
+    @Post('forgot-password')
+    @UsePipes(ZodValidationPipe)
+    async forgotPassword(@Body() dto: ForgotPasswordDto) {
+        return this.authService.forgotPassword(dto);
+    }
+
+    @Post('reset-password')
+    @UsePipes(ZodValidationPipe)
+    async resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto);
     }
 }

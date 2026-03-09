@@ -123,6 +123,11 @@ export default function LoginPage() {
                                     </FormItem>
                                 )}
                             />
+                            <div className="flex justify-end -mt-4">
+                                <Link href="/auth/forgot-password" virtual-tour-url className="text-xs text-primary hover:underline">
+                                    Mot de passe oublié ?
+                                </Link>
+                            </div>
                             <Button type="submit" className="w-full" disabled={loading}>
                                 {loading ? "Connexion en cours..." : "Se connecter"}
                             </Button>

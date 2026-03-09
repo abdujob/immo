@@ -14,6 +14,7 @@ import { ReviewModule } from './review/review.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { NotificationModule } from './notification/notification.module';
     UploadsModule,
     UserModule,
     NotificationModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

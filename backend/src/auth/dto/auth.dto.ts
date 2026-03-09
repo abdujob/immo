@@ -22,3 +22,16 @@ export const LoginSchema = z.object({
 });
 
 export class LoginDto extends createZodDto(LoginSchema) { }
+
+export const ForgotPasswordSchema = z.object({
+    email: z.string().email('Email invalide'),
+});
+
+export class ForgotPasswordDto extends createZodDto(ForgotPasswordSchema) { }
+
+export const ResetPasswordSchema = z.object({
+    token: z.string(),
+    password: passwordSchema,
+});
+
+export class ResetPasswordDto extends createZodDto(ResetPasswordSchema) { }

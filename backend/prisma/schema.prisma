@@ -24,6 +24,13 @@ model User {
   lastName  String?
   role      String   @default("INDIVIDUAL") // INDIVIDUAL, AGENCY_AGENT, ADMIN
   avatar    String?
+  
+  // Security & Verification
+  isVerified           Boolean   @default(false)
+  verificationToken    String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
