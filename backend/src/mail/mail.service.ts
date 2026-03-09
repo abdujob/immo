@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import * as dns from 'dns';
 
 @Injectable()
 export class MailService {
@@ -22,7 +23,10 @@ export class MailService {
       connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 15000,
-      family: 4, // Force IPv4 to avoid ENETUNREACH errors on ipv6-limited environments
+      // FORCE IPv4 at the DNS level to fix ENETUNREACH on Render
+      lookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { family: 4 }, callback);
+      },
       tls: {
         rejectUnauthorized: false
       }
