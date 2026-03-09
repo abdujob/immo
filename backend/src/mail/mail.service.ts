@@ -19,12 +19,15 @@ export class MailService {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      // Force IPv4
+      family: 4,
       // Timeouts settings to prevent hanging
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
       // FORCE IPv4 at the DNS level to fix ENETUNREACH on Render
       lookup: (hostname, options, callback) => {
+        console.log(`DNS lookup for ${hostname} (forcing family 4)`);
         dns.lookup(hostname, { family: 4 }, callback);
       },
       tls: {
@@ -62,7 +65,6 @@ export class MailService {
   async sendVerificationEmail(email: string, token: string) {
     const url = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
 
-    // Log for development if no SMTP configured
     if (!process.env.SMTP_USER) {
       console.log('--- DEVELOPMENT MAIL LOG ---');
       console.log(`To: ${email}`);
@@ -74,7 +76,7 @@ export class MailService {
 
     try {
       const info = await this.transporter.sendMail({
-        from: `"Immo Sénégal" <${process.env.SMTP_USER}>`,
+        from: process.env.EMAIL_FROM || `"Immo Sénégal" <${process.env.SMTP_USER}>`,
         to: email,
         subject: 'Vérifiez votre compte - Immo Sénégal',
         html: `
@@ -92,15 +94,16 @@ export class MailService {
           `,
       });
       console.log('Verification email sent successfully:', info.messageId);
+      return info;
     } catch (error) {
       console.error('FAILED to send verification email:', error);
+      throw new Error(`Erreur d'envoi d'email : ${error.message}`);
     }
   }
 
   async sendPasswordResetEmail(email: string, token: string) {
     const url = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}`;
 
-    // Log for development if no SMTP configured
     if (!process.env.SMTP_USER) {
       console.log('--- DEVELOPMENT MAIL LOG ---');
       console.log(`To: ${email}`);
@@ -112,7 +115,7 @@ export class MailService {
 
     try {
       const info = await this.transporter.sendMail({
-        from: `"Immo Sénégal" <${process.env.SMTP_USER}>`,
+        from: process.env.EMAIL_FROM || `"Immo Sénégal" <${process.env.SMTP_USER}>`,
         to: email,
         subject: 'Réinitialisation de votre mot de passe - Immo Sénégal',
         html: `
@@ -131,8 +134,10 @@ export class MailService {
           `,
       });
       console.log('Password reset email sent successfully:', info.messageId);
+      return info;
     } catch (error) {
       console.error('FAILED to send password reset email:', error);
+      throw new Error(`Erreur d'envoi d'email : ${error.message}`);
     }
   }
 }
