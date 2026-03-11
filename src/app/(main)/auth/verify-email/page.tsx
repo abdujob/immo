@@ -30,6 +30,10 @@ function VerifyEmailContent() {
         if (result.success) {
             setStatus("success");
             setMessage(result.message);
+            // Auto redirect to login after 3 seconds on success
+            setTimeout(() => {
+                router.push("/auth/login?verified=true");
+            }, 3000);
         } else {
             setStatus("error");
             setMessage(result.message || "La vérification a échoué.");
@@ -56,7 +60,10 @@ function VerifyEmailContent() {
                     <>
                         <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
                         <h3 className="text-xl font-bold mb-2">Compte activé !</h3>
-                        <p className="text-muted-foreground mb-6">{message}</p>
+                        <p className="text-muted-foreground mb-4">{message}</p>
+                        <p className="text-sm text-blue-600 animate-pulse mb-6">
+                            Redirection vers la connexion dans quelques secondes...
+                        </p>
                         <Button asChild className="w-full">
                             <Link href="/auth/login">Se connecter</Link>
                         </Button>

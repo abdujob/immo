@@ -69,8 +69,8 @@ export default function RegisterPage() {
                 throw new Error(errorData.message || "Erreur lors de l'inscription");
             }
 
-            // On success, redirect to login
-            router.push("/auth/login?registered=true");
+            // On success, redirect to verify-request page
+            router.push("/auth/verify-request");
 
         } catch (err: any) {
             setError(err.message || "Une erreur est survenue.");
