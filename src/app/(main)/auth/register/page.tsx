@@ -110,6 +110,41 @@ export default function RegisterPage() {
 
                             <FormField
                                 control={form.control}
+                                name="role"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <FormLabel>Vous êtes...</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                className="flex flex-col space-y-1"
+                                            >
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="INDIVIDUAL" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        Particulier (je veux publier/rechercher un bien)
+                                                    </FormLabel>
+                                                </FormItem>
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="AGENCY_AGENT" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        Agent immobilier (je représente une agence)
+                                                    </FormLabel>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
@@ -198,40 +233,6 @@ export default function RegisterPage() {
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="role"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-3">
-                                        <FormLabel>Vous êtes...</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                                className="flex flex-col space-y-1"
-                                            >
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                        <RadioGroupItem value="INDIVIDUAL" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        Particulier (je veux publier/rechercher un bien)
-                                                    </FormLabel>
-                                                </FormItem>
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                        <RadioGroupItem value="AGENCY_AGENT" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        Agent immobilier (je représente une agence)
-                                                    </FormLabel>
-                                                </FormItem>
-                                            </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
 
                             <Button type="submit" className="w-full mt-6" disabled={loading}>
                                 {loading ? "Inscription..." : "S'inscrire"}
