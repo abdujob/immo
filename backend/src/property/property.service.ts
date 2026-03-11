@@ -115,7 +115,7 @@ export class PropertyService {
         };
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, user?: any) {
         const property = await this.prisma.property.findUnique({
             where: { id },
             include: {
@@ -153,6 +153,12 @@ export class PropertyService {
 
         if (!property) {
             throw new NotFoundException('Propriété non trouvée');
+        }
+
+        // Mask contact info if the user is not authenticated
+        if (!user && property.owner) {
+            property.owner.email = null as any;
+            property.owner.phone = null as any;
         }
 
         // Increment views

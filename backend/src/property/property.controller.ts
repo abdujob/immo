@@ -13,6 +13,7 @@ import {
     UseInterceptors,
     UploadedFiles,
     BadRequestException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { PropertyService } from './property.service';
@@ -26,6 +27,7 @@ import {
     UpdatePropertySchema,
     PropertyFilterSchema,
 } from './property.dto';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -65,6 +67,10 @@ export class PropertyController {
             hasAirCon: body.hasAirCon === 'true' || body.hasAirCon === true,
             hasGuardian: body.hasGuardian === 'true' || body.hasGuardian === true,
         };
+
+        if (!req.user || req.user.isVerified === false) {
+            throw new ForbiddenException('Veuillez valider votre email pour créer une annonce.');
+        }
 
         try {
             // Log received data for debugging
@@ -135,9 +141,10 @@ export class PropertyController {
     }
 
     @Get(':id')
+    @UseGuards(OptionalJwtAuthGuard)
     @ApiOperation({ summary: 'Obtenir une propriété par ID' })
-    findOne(@Param('id') id: string) {
-        return this.propertyService.findOne(id);
+    findOne(@Param('id') id: string, @Request() req) {
+        return this.propertyService.findOne(id, req.user);
     }
 
     @Get(':id/similar')

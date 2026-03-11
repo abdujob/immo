@@ -19,6 +19,7 @@ import { PropertyCard } from "@/components/property/PropertyCard";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -31,6 +32,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
     const { toggleFavorite, isFavorite } = useFavorites();
     const { isAuthenticated, user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showContactForm, setShowContactForm] = useState(false);
@@ -455,25 +457,30 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                         <span className="text-xs text-green-600 font-medium">✓ Agence vérifiée</span>
                                     )}
                                     <div className="mt-3 space-y-2 text-sm text-gray-600">
-                                        {contactPhone && (
-                                            <div className="flex items-center gap-2">
-                                                <Phone className="w-4 h-4" />
+                                        <div className="flex items-center gap-2">
+                                            <Phone className="w-4 h-4" />
+                                            {isAuthenticated && contactPhone ? (
                                                 <a href={`tel:${contactPhone}`} className="hover:text-blue-600 font-medium">{contactPhone}</a>
-                                            </div>
-                                        )}
-                                        {contactEmail && (
-                                            <div className="flex items-center gap-2">
-                                                <Mail className="w-4 h-4" />
+                                            ) : (
+                                                <span className="text-gray-400 italic">Connectez-vous pour voir le numéro</span>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <Mail className="w-4 h-4" />
+                                            {isAuthenticated && contactEmail ? (
                                                 <a href={`mailto:${contactEmail}`} className="hover:text-blue-600 truncate">{contactEmail}</a>
-                                            </div>
-                                        )}
+                                            ) : (
+                                                <span className="text-gray-400 italic">Connectez-vous pour voir l'email</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Action Buttons */}
                                 {!showContactForm && !contactSent ? (
                                     <div className="space-y-3">
-                                        {contactPhone && (
+                                        {isAuthenticated && contactPhone && (
                                             <Button className="w-full bg-blue-600 hover:bg-blue-700" asChild>
                                                 <a href={`tel:${contactPhone}`}>
                                                     <Phone className="w-4 h-4 mr-2" />
@@ -487,6 +494,9 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                             onClick={() => {
                                                 if (!isAuthenticated) {
                                                     toast({ title: "Connexion requise", description: "Connectez-vous pour envoyer un message.", variant: "destructive" });
+                                                } else if (user?.isVerified === false) {
+                                                    toast({ title: "Action requise", description: "Veuillez valider votre email pour utiliser cette fonctionnalité.", variant: "destructive" });
+                                                    router.push('/dashboard/profile');
                                                 } else {
                                                     setShowContactForm(true);
                                                 }

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/components/ui/use-toast";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,8 +54,26 @@ const STEPS = [
 
 export default function NewPropertyPage() {
     const router = useRouter();
+    const { user, isAuthenticated, isLoading } = useAuth();
+    const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!isLoading) {
+            if (!isAuthenticated) {
+                router.push('/auth/login');
+            } else if (user?.isVerified === false) {
+                toast({
+                    title: "Validation requise",
+                    description: "Veuillez valider votre email pour pouvoir publier une annonce.",
+                    variant: "destructive"
+                });
+                router.push('/dashboard/profile');
+            }
+        }
+    }, [isAuthenticated, isLoading, user, router, toast]);
+
     const [formData, setFormData] = useState<PropertyFormData>({
         title: "",
         description: "",
@@ -472,7 +492,7 @@ export default function NewPropertyPage() {
                             ) : (
                                 <Button
                                     onClick={handleSubmit}
-                                    disabled={loading}
+                                    disabled={loading || user?.isVerified === false}
                                     className="bg-green-600 hover:bg-green-700"
                                 >
                                     {loading ? 'Publication...' : 'Publier l\'annonce'}

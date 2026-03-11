@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Camera, User, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { Loader2, Camera, User, Mail, Phone, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
@@ -39,8 +39,8 @@ export default function ProfilePage() {
             lastName: '',
             email: '',
             phone: ''
-}
-});
+        }
+    });
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -57,7 +57,7 @@ export default function ProfilePage() {
                 lastName: user.lastName || '',
                 email: user.email || '',
                 phone: user.phone || ''
-});
+            });
             if (user.avatar) {
                 setAvatarUrl(user.avatar.startsWith('http') ? user.avatar : `${API_URL}${user.avatar}`);
             }
@@ -72,7 +72,7 @@ export default function ProfilePage() {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' }, credentials: 'include',
                 body: JSON.stringify(data)
-});
+            });
 
             if (!response.ok) throw new Error('Erreur lors de la sauvegarde');
 
@@ -82,13 +82,13 @@ export default function ProfilePage() {
             toast({
                 title: "✅ Profil mis à jour",
                 description: "Vos informations ont été enregistrées avec succès."
-});
+            });
         } catch (error) {
             toast({
                 title: "Erreur",
                 description: "Impossible de mettre à jour le profil.",
                 variant: "destructive"
-});
+            });
         } finally {
             setIsSaving(false);
         }
@@ -106,7 +106,7 @@ export default function ProfilePage() {
                 method: 'PATCH',
                 credentials: 'include',
                 body: formData
-});
+            });
 
             if (response.ok) {
                 const data = await response.json();
@@ -141,6 +141,19 @@ export default function ProfilePage() {
     return (
         <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-900 mb-8">Mon Profil</h1>
+
+            {user.isVerified === false && (
+                <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md flex items-start gap-3">
+                    <AlertTriangle className="text-red-500 w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <h3 className="text-red-800 font-semibold mb-1">Votre compte n'est pas vérifié</h3>
+                        <p className="text-red-700 text-sm">
+                            Veuillez vérifier votre adresse email ({user.email}) pour pouvoir publier des annonces et contacter les propriétaires.
+                            Consultez votre boîte de réception ou vos spams pour trouver le lien de validation.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid gap-8">
                 {/* Avatar Section */}

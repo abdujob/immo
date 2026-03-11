@@ -55,6 +55,10 @@ export default function LoginPage() {
             });
 
             if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                if (errorData && errorData.message) {
+                    throw new Error(errorData.message);
+                }
                 throw new Error("Identifiants incorrects");
             }
 
@@ -71,8 +75,8 @@ export default function LoginPage() {
                 router.push("/");
             }
 
-        } catch (err) {
-            setError("Email ou mot de passe incorrect.");
+        } catch (err: any) {
+            setError(err.message || "Email ou mot de passe incorrect.");
         } finally {
             setLoading(false);
         }

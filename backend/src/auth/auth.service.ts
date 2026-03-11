@@ -52,7 +52,12 @@ export class AuthService {
         await this.mailService.sendVerificationEmail(user.email, verificationToken);
 
         // Generate token
-        const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+        const token = this.jwtService.sign({
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.isVerified
+        });
 
         return {
             access_token: token,
@@ -64,6 +69,7 @@ export class AuthService {
                 phone: user.phone,
                 role: user.role,
                 agency: user.agency,
+                isVerified: user.isVerified
             }
         };
     }
@@ -80,16 +86,17 @@ export class AuthService {
             throw new UnauthorizedException('Email ou mot de passe invalide');
         }
 
-        if (!user.isVerified) {
-            throw new UnauthorizedException('Veuillez vérifier votre email avant de vous connecter');
-        }
-
         const isMatch = await bcrypt.compare(dto.password, user.password);
         if (!isMatch) {
             throw new UnauthorizedException('Email ou mot de passe invalide');
         }
 
-        const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+        const token = this.jwtService.sign({
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+            isVerified: user.isVerified
+        });
 
         return {
             access_token: token,
@@ -101,6 +108,7 @@ export class AuthService {
                 phone: user.phone,
                 role: user.role,
                 agency: user.agency,
+                isVerified: user.isVerified
             }
         };
     }

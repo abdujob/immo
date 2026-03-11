@@ -19,23 +19,25 @@ export class MailService {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      // Force IPv4
+      // Explicitly force IPv4 for the socket
       family: 4,
       // Timeouts settings to prevent hanging
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000,
-      // FORCE IPv4 at the DNS level to fix ENETUNREACH on Render
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 30000,
+      // Aggressive IPv4 enforcement at DNS level
       lookup: (hostname, options, callback) => {
-        console.log(`DNS lookup for ${hostname} (forcing family 4)`);
-        dns.lookup(hostname, { family: 4 }, callback);
+        dns.lookup(hostname, 4, (err, address, family) => {
+          console.log(`Resolved ${hostname} to ${address} (Family: ${family})`);
+          callback(err, address, family);
+        });
       },
       tls: {
         rejectUnauthorized: false
       }
     } as any);
 
-    console.log(`MailService initialized with ${host}:${port} (secure: ${secure})`);
+    console.log(`MailService initialized for ${host}:${port} (IPv4 preferred)`);
   }
 
   async testConnection() {

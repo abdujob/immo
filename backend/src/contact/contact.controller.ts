@@ -8,6 +8,7 @@ import {
     UseGuards,
     Request,
     UsePipes,
+    ForbiddenException,
 } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import type { CreateContactDto } from './contact.dto';
@@ -27,6 +28,10 @@ export class ContactController {
     @UsePipes(new ZodValidationPipe(CreateContactSchema))
     @ApiOperation({ summary: 'Créer une demande de contact' })
     create(@Request() req, @Body() createContactDto: CreateContactDto) {
+        if (!req.user || req.user.isVerified === false) {
+            throw new ForbiddenException('Veuillez valider votre email pour envoyer un message.');
+        }
+
         console.log('DEBUG: Contact created by user:', {
             id: req.user?.id,
             email: req.user?.email,
