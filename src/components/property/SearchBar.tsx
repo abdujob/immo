@@ -2,21 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Search, MapPin } from "lucide-react";
 import { useState } from "react";
-
-const SENEGAL_CITIES = [
-    "Dakar",
-    "Thiès",
-    "Saint-Louis",
-    "Kaolack",
-    "Ziguinchor",
-    "Louga",
-    "Mbour",
-    "Rufisque",
-    "Touba",
-    "Diourbel",
-];
+import { useRouter } from "next/navigation";
 
 const PROPERTY_TYPES = [
     { value: "APPARTEMENT", label: "Appartement" },
@@ -40,16 +29,29 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ onSearch }: SearchBarProps) {
-    const [city, setCity] = useState("all");
+    const router = useRouter();
+    const [city, setCity] = useState("");
     const [propertyType, setPropertyType] = useState("all");
     const [transactionType, setTransactionType] = useState("VENTE");
 
     const handleSearch = () => {
-        onSearch?.({
-            city: city !== "all" ? city : undefined,
+        const filters = {
+            city: city.trim() || undefined,
             propertyType: propertyType !== "all" ? propertyType : undefined,
             transactionType: transactionType || undefined,
-        });
+        };
+
+        if (onSearch) {
+            onSearch(filters);
+        } else {
+            // Logic de redirection par défaut vers /properties avec les filtres
+            const params = new URLSearchParams();
+            if (filters.city) params.set('city', filters.city);
+            if (filters.propertyType) params.set('propertyType', filters.propertyType);
+            if (filters.transactionType) params.set('transactionType', filters.transactionType);
+            
+            router.push(`/properties?${params.toString()}`);
+        }
     };
 
     return (
@@ -58,16 +60,16 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 {/* Transaction Type Toggle */}
                 <div className="flex gap-2 mb-4">
                     <Button
-                        variant={transactionType === "VENTE" ? "default" : "outline"}
+                        variant={transactionType === "VENTE" ? "black" : "outline"}
                         onClick={() => setTransactionType("VENTE")}
-                        className="flex-1"
+                        className={`flex-1 ${transactionType === "VENTE" ? "bg-black text-white" : ""}`}
                     >
                         Acheter
                     </Button>
                     <Button
-                        variant={transactionType === "LOCATION" ? "default" : "outline"}
+                        variant={transactionType === "LOCATION" ? "black" : "outline"}
                         onClick={() => setTransactionType("LOCATION")}
-                        className="flex-1"
+                        className={`flex-1 ${transactionType === "LOCATION" ? "bg-black text-white" : ""}`}
                     >
                         Louer
                     </Button>
@@ -75,28 +77,21 @@ export function SearchBar({ onSearch }: SearchBarProps) {
 
                 {/* Search Inputs */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* City Select */}
+                    {/* City Input */}
                     <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                        <Select value={city} onValueChange={setCity}>
-                            <SelectTrigger className="pl-10 h-12">
-                                <SelectValue placeholder="Ville" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Toutes les villes</SelectItem>
-                                {SENEGAL_CITIES.map((c) => (
-                                    <SelectItem key={c} value={c}>
-                                        {c}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Input 
+                            value={city} 
+                            onChange={(e) => setCity(e.target.value)}
+                            placeholder="Toutes les villes"
+                            className="pl-10 h-12"
+                        />
                     </div>
 
                     {/* Property Type Select */}
                     <Select value={propertyType} onValueChange={setPropertyType}>
                         <SelectTrigger className="h-12">
-                            <SelectValue placeholder="Type de bien" />
+                            <SelectValue placeholder="Tous les types" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Tous les types</SelectItem>
