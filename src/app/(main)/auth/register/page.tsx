@@ -27,12 +27,20 @@ const formSchema = z.object({
         .min(1, { message: "Email requis." })
         .refine((val) => val.includes('@'), { message: "L'email doit contenir un @" }),
     password: z.string().min(8, { message: "8 caractères minimum." }),
-    firstName: z.string().min(2, { message: "Prénom requis." }),
-    lastName: z.string().min(2, { message: "Nom requis." }),
+    firstName: z.string().min(2, { message: "Ce champ est requis (min 2 car.)." }),
+    lastName: z.string().optional(),
     phone: z.string().min(9, { message: "Numéro invalide." }),
     role: z.enum(["INDIVIDUAL", "AGENCY_AGENT"], {
         message: "Vous devez choisir un type de compte.",
     }),
+}).refine((data) => {
+    if (data.role === "INDIVIDUAL" && (!data.lastName || data.lastName.length < 2)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Le nom est requis pour un particulier.",
+    path: ["lastName"],
 });
 
 export default function RegisterPage() {
@@ -51,6 +59,8 @@ export default function RegisterPage() {
             role: "INDIVIDUAL",
         },
     });
+
+    const role = form.watch("role");
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true);
@@ -112,33 +122,53 @@ export default function RegisterPage() {
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="firstName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Prénom</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Votre prénom" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            {role === "INDIVIDUAL" ? (
+                                <>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="firstName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Prénom</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Votre prénom" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
 
-                            <FormField
-                                control={form.control}
-                                name="lastName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nom</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Votre nom" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                        <FormField
+                                            control={form.control}
+                                            name="lastName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Nom</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Votre nom" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <FormField
+                                    control={form.control}
+                                    name="firstName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nom de l'agence</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Ex: Immo S.A." {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
 
                             <FormField
                                 control={form.control}

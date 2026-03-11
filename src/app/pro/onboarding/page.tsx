@@ -23,8 +23,8 @@ import { cn } from "@/lib/utils";
 
 // Schema for Pro Onboarding
 const proSchema = z.object({
-    firstName: z.string().min(2, "Le prénom est requis"),
-    lastName: z.string().min(2, "Le nom est requis"),
+    firstName: z.string().min(2, "Le prénom est requis").optional(),
+    lastName: z.string().min(2, "Le nom est requis").optional(),
     bio: z.string().min(10, "La bio doit faire au moins 10 caractères"),
     experience: z.string().min(1, "L'expérience est requise"),
     // Agency fields
@@ -48,11 +48,31 @@ export default function OnboardingPage() {
             firstName: "",
             lastName: "",
             bio: "",
-            experience: ""
-}
-});
+            experience: "",
+            agencyName: "",
+            agencyAddress: "",
+            operatingZone: ""
+        }
+    });
 
     const onSubmit = async (data: ProFormValues) => {
+        if (!type) {
+            toast({ title: "Erreur", description: "Veuillez choisir Particulier ou Agence.", variant: "destructive" });
+            return;
+        }
+
+        if (type === "AGENCE") {
+            if (!data.agencyName || data.agencyName.trim().length < 2) {
+                toast({ title: "Erreur", description: "Le nom de l'agence est requis.", variant: "destructive" });
+                return;
+            }
+        } else {
+            if (!data.firstName || data.firstName.trim().length < 2 || !data.lastName || data.lastName.trim().length < 2) {
+                toast({ title: "Erreur", description: "Prénom et nom sont requis.", variant: "destructive" });
+                return;
+            }
+        }
+
         setIsSubmitting(true);
         try {
             const user = localStorage.getItem('user');
@@ -180,34 +200,36 @@ export default function OnboardingPage() {
 
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="firstName"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Prénom</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Alex" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="lastName"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Nom</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Dupont" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
+                                    {type === "PARTICULIER" ? (
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <FormField
+                                                control={form.control}
+                                                name="firstName"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Prénom</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="Alex" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="lastName"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Nom</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="Dupont" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    ) : null}
 
                                     <FormField
                                         control={form.control}
