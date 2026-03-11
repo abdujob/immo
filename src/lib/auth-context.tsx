@@ -29,17 +29,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Init depuis le localStorage au chargement
+    // Init session au chargement
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch {
-                localStorage.removeItem('user');
+        const initAuth = async () => {
+            const storedUser = localStorage.getItem('user');
+            const token = localStorage.getItem('token');
+
+            if (storedUser) {
+                try {
+                    setUser(JSON.parse(storedUser));
+                } catch {
+                    localStorage.removeItem('user');
+                }
             }
-        }
-        setIsLoading(false);
+
+            // Si on a un token, on vérifie discrètement avec le serveur
+            // pour être sûr que la session est toujours valide
+            if (token) {
+                await refreshUser();
+            }
+
+            setIsLoading(false);
+        };
+
+        initAuth();
     }, []);
 
     const login = async (email: string, password: string) => {

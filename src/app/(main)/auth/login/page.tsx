@@ -29,7 +29,10 @@ const formSchema = z.object({
     }),
 });
 
+import { useAuth } from "@/lib/auth-context";
+
 export default function LoginPage() {
+    const { login } = useAuth();
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -47,34 +50,23 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: 'include',
-                body: JSON.stringify(values),
-            });
+            const result = await login(values.email, values.password);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                if (errorData && errorData.message) {
-                    throw new Error(errorData.message);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+
+            // Redirect automatically after successful login
+            // The context state is already updated by login()
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                if (userData.role === "AGENCY_AGENT" || userData.role === "ADMIN") {
+                    router.push("/dashboard");
+                    return;
                 }
-                throw new Error("Identifiants incorrects");
             }
-
-            const data = await response.json();
-
-            // Store Token & User (Note: Token is also in HttpOnly Cookie)
-            localStorage.setItem("token", data.access_token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-
-            // Redirect based on role
-            if (data.user.role === "AGENCY_AGENT" || data.user.role === "ADMIN") {
-                router.push("/dashboard");
-            } else {
-                router.push("/");
-            }
-
+            router.push("/");
         } catch (err: any) {
             setError(err.message || "Email ou mot de passe incorrect.");
         } finally {

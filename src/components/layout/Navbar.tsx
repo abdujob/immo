@@ -23,7 +23,7 @@ import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } 
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, isLoading, logout } = useAuth();
     const router = useRouter();
 
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -102,7 +102,9 @@ export function Navbar() {
                             Agences
                         </Link>
 
-                        {isAuthenticated ? (
+                        {isLoading ? (
+                            <div className="h-8 w-24 bg-gray-100 animate-pulse rounded-md" />
+                        ) : isAuthenticated ? (
                             <>
                                 <Link href="/favorites">
                                     <Button variant="ghost" size="icon" title="Mes favoris">
@@ -278,7 +280,9 @@ export function Navbar() {
                                         Agences
                                     </Link>
 
-                                    {isAuthenticated ? (
+                                    {isLoading ? (
+                                        <div className="h-10 w-full bg-gray-100 animate-pulse rounded-md" />
+                                    ) : isAuthenticated ? (
                                         <>
                                             <Link
                                                 href="/favorites"
