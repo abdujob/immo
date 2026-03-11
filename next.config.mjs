@@ -22,6 +22,11 @@ const nextConfig = {
                 protocol: 'https',
                 hostname: '*.onrender.com',
             },
+            {
+                // Production API
+                protocol: 'https',
+                hostname: 'api.immosenegal.sn',
+            },
         ],
     },
 };
