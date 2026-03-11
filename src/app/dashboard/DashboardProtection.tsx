@@ -14,11 +14,6 @@ export default function DashboardProtection({ children }: { children: React.Reac
             return;
         }
 
-        const userData = JSON.parse(user);
-        // Only allow AGENCY_AGENT and ADMIN roles
-        if (userData.role !== 'AGENCY_AGENT' && userData.role !== 'ADMIN') {
-            router.push('/');
-        }
     }, [router]);
 
     return <>{children}</>;
