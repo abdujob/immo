@@ -71,8 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('user', JSON.stringify(data.user));
             setUser(data.user);
             return { success: true };
-        } catch (err: any) {
-            return { success: false, error: err.message || 'Erreur de connexion' };
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Erreur de connexion';
+            return { success: false, error: message };
         }
     };
 

@@ -57,7 +57,7 @@ export interface Property {
         phone: string;
         email: string;
     };
-    reviews?: any[];
+    reviews?: unknown[];
     _count?: {
         favorites?: number;
     };
@@ -133,7 +133,7 @@ export async function getProperties(page = 1, limit = 20): Promise<Property[]> {
 export async function getPaginatedProperties(
     page = 1,
     limit = 20,
-    filters: Record<string, any> = {}
+    filters: Record<string, string | number | boolean | undefined> = {}
 ): Promise<PaginatedProperties> {
     try {
         const params = new URLSearchParams({
@@ -330,7 +330,7 @@ export async function getAgencies(): Promise<Agency[]> {
 /**
  * Get a single agency by ID
  */
-export async function getAgencyById(id: string): Promise<any> {
+export async function getAgencyById(id: string): Promise<Agency | null> {
     try {
         const res = await fetch(`${API_BASE_URL}/agencies/${id}`, {
             next: { revalidate: 60 }
@@ -400,7 +400,7 @@ export async function getFavorites(): Promise<Property[]> {
 
         const data = await res.json();
         if (Array.isArray(data)) {
-            return data.map((fav: any) => fav.property ?? fav);
+            return data.map((fav: { property?: Property }) => fav.property ?? (fav as unknown as Property));
         }
         return [];
     } catch (error) {
@@ -505,14 +505,14 @@ export async function sendContact(propertyId: string, message: string, phone?: s
 /**
  * Get unique conversation threads
  */
-export async function getConversations(): Promise<any[]> {
+export async function getConversations(): Promise<unknown[]> {
     try {
         const res = await fetch(`${API_BASE_URL}/contacts/conversations`, {
             headers: getAuthHeaders(),
             credentials: 'include',
             cache: 'no-store'
         });
-        return res.ok ? res.json() : [];
+        return res.ok ? res.json() as Promise<unknown[]> : [];
     } catch {
         return [];
     }
@@ -521,14 +521,14 @@ export async function getConversations(): Promise<any[]> {
 /**
  * Get messages for a specific thread
  */
-export async function getThreadMessages(otherUserId: string, propertyId: string): Promise<any[]> {
+export async function getThreadMessages(otherUserId: string, propertyId: string): Promise<unknown[]> {
     try {
         const res = await fetch(`${API_BASE_URL}/contacts/thread/${otherUserId}/${propertyId}`, {
             headers: getAuthHeaders(),
             credentials: 'include',
             cache: 'no-store'
         });
-        return res.ok ? res.json() : [];
+        return res.ok ? res.json() as Promise<unknown[]> : [];
     } catch {
         return [];
     }
@@ -537,7 +537,7 @@ export async function getThreadMessages(otherUserId: string, propertyId: string)
 /**
  * Get contacts received (as property owner)
  */
-export async function getContactsReceived(): Promise<any[]> {
+export async function getContactsReceived(): Promise<unknown[]> {
     const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     if (!user) return [];
     try {
@@ -545,7 +545,7 @@ export async function getContactsReceived(): Promise<any[]> {
             headers: getAuthHeaders(),
             credentials: 'include'
         });
-        return res.ok ? res.json() : [];
+        return res.ok ? res.json() as Promise<unknown[]> : [];
     } catch {
         return [];
     }
@@ -554,7 +554,7 @@ export async function getContactsReceived(): Promise<any[]> {
 /**
  * Get contacts sent by the user
  */
-export async function getContactsSent(): Promise<any[]> {
+export async function getContactsSent(): Promise<unknown[]> {
     const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     if (!user) return [];
     try {
@@ -562,7 +562,7 @@ export async function getContactsSent(): Promise<any[]> {
             headers: getAuthHeaders(),
             credentials: 'include'
         });
-        return res.ok ? res.json() : [];
+        return res.ok ? res.json() as Promise<unknown[]> : [];
     } catch {
         return [];
     }
@@ -633,13 +633,13 @@ export async function getStats(): Promise<GlobalStats> {
 /**
  * Get user notifications
  */
-export async function getNotifications(): Promise<any[]> {
+export async function getNotifications(): Promise<unknown[]> {
     try {
         const res = await fetch(`${API_BASE_URL}/notifications`, {
             headers: getAuthHeaders(),
             credentials: 'include'
         });
-        return res.ok ? res.json() : [];
+        return res.ok ? res.json() as Promise<unknown[]> : [];
     } catch {
         return [];
     }
