@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ export default function RegisterPage() {
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -226,7 +228,17 @@ export default function RegisterPage() {
                                     <FormItem>
                                         <FormLabel>Mot de passe</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="********" {...field} />
+                                            <div className="relative">
+                                                <Input type={showPassword ? "text" : "password"} placeholder="********" {...field} />
+                                                <button
+                                                    type="button"
+                                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    tabIndex={-1}
+                                                >
+                                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                </button>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
