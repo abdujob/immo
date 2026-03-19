@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -28,6 +28,40 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const logoutTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const clearLogoutTimer = () => {
+        if (logoutTimerRef.current) {
+            clearTimeout(logoutTimerRef.current);
+            logoutTimerRef.current = null;
+        }
+    };
+
+    const performLocalLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+    };
+
+    const scheduleLogout = (token: string) => {
+        clearLogoutTimer();
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const exp = payload.exp * 1000;
+            const timeRemaining = exp - Date.now();
+
+            if (timeRemaining <= 0) {
+                performLocalLogout();
+            } else {
+                logoutTimerRef.current = setTimeout(() => {
+                    performLocalLogout();
+                    window.location.reload(); 
+                }, timeRemaining);
+            }
+        } catch {
+            performLocalLogout();
+        }
+    };
 
     // Init session au chargement
     useEffect(() => {
@@ -46,7 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Si on a un token, on vérifie discrètement avec le serveur
             // pour être sûr que la session est toujours valide
             if (token) {
-                await refreshUser();
+                scheduleLogout(token);
+                if (localStorage.getItem('token')) {
+                    await refreshUser();
+                }
             }
 
             setIsLoading(false);
@@ -70,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('token', data.access_token);
             localStorage.setItem('user', JSON.stringify(data.user));
             setUser(data.user);
+            scheduleLogout(data.access_token);
             return { success: true };
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Erreur de connexion';
@@ -78,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = async () => {
+        clearLogoutTimer();
         try {
             await fetch(`${API_BASE_URL}/auth/logout`, {
                 method: 'POST',
@@ -86,9 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             console.error('Logout error', e);
         }
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
+        performLocalLogout();
     };
 
     const refreshUser = async () => {
