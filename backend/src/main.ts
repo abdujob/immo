@@ -28,19 +28,27 @@ async function bootstrap() {
   // Normalize by removing trailing slash for strict CORS matching
   const origin = frontendUrl.endsWith('/') ? frontendUrl.slice(0, -1) : frontendUrl;
 
-  console.log('CORS configured for:', [origin, 'http://localhost:3000']);
+  console.log('CORS configured for:', [origin, 'http://localhost:3000', 'https://immosenegal.sn']);
 
   app.enableCors({
     origin: (requestOrigin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        origin,
+        'https://immosenegal.sn',
+        'https://www.immosenegal.sn',
+      ];
+
       if (
         !requestOrigin ||
-        requestOrigin === 'http://localhost:3000' ||
-        requestOrigin === 'http://localhost:3001' ||
+        allowedOrigins.includes(requestOrigin) ||
         requestOrigin.endsWith('.vercel.app') ||
-        requestOrigin === origin
+        requestOrigin.endsWith('.immosenegal.sn')
       ) {
         callback(null, true);
       } else {
+        console.warn(`CORS blocked request from origin: ${requestOrigin}`);
         callback(null, false); // Block other origins
       }
     },
