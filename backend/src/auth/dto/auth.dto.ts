@@ -7,8 +7,8 @@ const phoneSchema = z.string().min(8, "Le numéro de téléphone est requis");
 export const RegisterSchema = z.object({
     email: z.string().email('Email invalide'),
     password: passwordSchema,
-    firstName: z.string().min(2, 'Le prénom est requis').optional(),
-    lastName: z.string().min(2, 'Le nom est requis').optional(),
+    firstName: z.preprocess((val) => val === '' ? undefined : val, z.string().min(2, 'Le prénom est requis').optional()),
+    lastName: z.preprocess((val) => val === '' ? undefined : val, z.string().min(2, 'Le nom est requis').optional()),
     phone: phoneSchema.optional(),
     role: z.enum(['INDIVIDUAL', 'AGENCY_AGENT', 'ADMIN']).default('INDIVIDUAL'),
     agencyId: z.string().uuid().optional(), // For agency agents
