@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
     MapPin, Bed, Bath, Maximize, Car, TreePine, Waves,
     Phone, Mail, Heart, Share2, ChevronLeft, ChevronRight,
-    Loader2, CheckCircle2, Wind, Shield, Home, Star
+    Loader2, CheckCircle2, Wind, Shield, Home, Star, Play
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,7 +34,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
     const { toast } = useToast();
     const router = useRouter();
 
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const [showContactForm, setShowContactForm] = useState(false);
     const [contactLoading, setContactLoading] = useState(false);
     const [contactSent, setContactSent] = useState(false);
@@ -52,8 +52,14 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
     const propertyVideos = parseVideos(property.videos);
     const isPropertyFavorite = isFavorite(property.id);
 
-    const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % propertyImages.length);
-    const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + propertyImages.length) % propertyImages.length);
+    // Combine images and videos into a single media array
+    const allMedia = [
+        ...propertyImages.map(url => ({ type: 'image' as const, url })),
+        ...propertyVideos.map(url => ({ type: 'video' as const, url }))
+    ];
+
+    const nextMedia = () => setCurrentMediaIndex((prev) => (prev + 1) % allMedia.length);
+    const prevMedia = () => setCurrentMediaIndex((prev) => (prev - 1 + allMedia.length) % allMedia.length);
 
     const handleFavoriteClick = async () => {
         if (!isAuthenticated) {
@@ -141,7 +147,6 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
             toast({ title: "Merci", description: "Votre avis a été publié avec succès." });
             setShowReviewForm(false);
             setReviewForm({ rating: 5, comment: '' });
-            // Ideally we should refetch the reviews here. For now, we simulate by adding locally (or requesting a refresh).
         } else {
             toast({ title: "Erreur", description: "Impossible de publier l'avis.", variant: "destructive" });
         }
@@ -163,56 +168,75 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                     <span className="text-gray-900 truncate max-w-xs">{property.title}</span>
                 </div>
 
-                {/* Image Gallery */}
-                <div className="relative h-[500px] rounded-2xl overflow-hidden mb-8 group shadow-lg">
-                    <Image
-                        src={propertyImages[currentImageIndex]}
-                        alt={property.title}
-                        fill
-                        className="object-cover"
-                        priority
-                    />
+                {/* Media Gallery (Images + Videos) */}
+                <div className="relative h-[500px] rounded-2xl overflow-hidden mb-8 group shadow-lg bg-black/5">
+                    {allMedia[currentMediaIndex].type === 'image' ? (
+                        <Image
+                            src={allMedia[currentMediaIndex].url}
+                            alt={property.title}
+                            fill
+                            className="object-cover"
+                            priority
+                        />
+                    ) : (
+                        <div className="relative w-full h-full bg-black flex items-center justify-center">
+                            <video
+                                src={allMedia[currentMediaIndex].url}
+                                className="w-full h-full"
+                                controls
+                                crossOrigin="anonymous"
+                                preload="auto"
+                            />
+                        </div>
+                    )}
 
-                    {propertyImages.length > 1 && (
+                    {allMedia.length > 1 && (
                         <>
                             <button
-                                onClick={prevImage}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                onClick={prevMedia}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow z-10"
                             >
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
                             <button
-                                onClick={nextImage}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                onClick={nextMedia}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow z-10"
                             >
                                 <ChevronRight className="w-5 h-5" />
                             </button>
                         </>
                     )}
 
-                    {/* Thumbnails bar */}
-                    {propertyImages.length > 1 && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                            {propertyImages.map((_, i) => (
+                    {/* Thumbnails/Indicators bar */}
+                    {allMedia.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                            {allMedia.map((media, i) => (
                                 <button
                                     key={i}
-                                    onClick={() => setCurrentImageIndex(i)}
-                                    className={`w-2 h-2 rounded-full transition-all ${i === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'}`}
-                                />
+                                    onClick={() => setCurrentMediaIndex(i)}
+                                    className={`w-2 h-2 rounded-full transition-all flex items-center justify-center ${i === currentMediaIndex 
+                                        ? 'bg-white w-4' 
+                                        : 'bg-white/50'}`}
+                                >
+                                    {media.type === 'video' && i !== currentMediaIndex && (
+                                        <Play className="w-1 h-1 text-white fill-current" />
+                                    )}
+                                </button>
                             ))}
                         </div>
                     )}
 
                     {/* Badges */}
-                    <div className="absolute top-4 left-4 flex gap-2">
+                    <div className="absolute top-4 left-4 flex gap-2 z-10">
                         <Badge className="bg-blue-600 text-white">{property.transactionType}</Badge>
                         {property.featured && <Badge className="bg-yellow-500 text-white">⭐ Vedette</Badge>}
                         {property.verified && <Badge className="bg-green-500 text-white">✓ Vérifié</Badge>}
                     </div>
 
-                    {/* Image counter */}
-                    <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-                        {currentImageIndex + 1} / {propertyImages.length}
+                    {/* Media counter */}
+                    <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm z-10 flex items-center gap-1">
+                        {allMedia[currentMediaIndex].type === 'video' && <Play className="w-3 h-3 fill-current" />}
+                        {currentMediaIndex + 1} / {allMedia.length}
                     </div>
                 </div>
 
@@ -341,27 +365,6 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                 <p className="text-gray-700 leading-relaxed whitespace-pre-line">{property.description}</p>
                             </CardContent>
                         </Card>
-
-                        {/* Videos */}
-                        {propertyVideos.length > 0 && (
-                            <Card>
-                                <CardContent className="p-6">
-                                    <h2 className="text-xl font-bold mb-4">Vidéos</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {propertyVideos.map((video, index) => (
-                                            <div key={index} className="aspect-video bg-black rounded-xl overflow-hidden shadow-sm">
-                                                <video
-                                                    src={video}
-                                                    className="w-full h-full"
-                                                    controls
-                                                    preload="metadata"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
 
                         {/* Reviews Section */}
                         <Card>

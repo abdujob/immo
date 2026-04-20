@@ -58,7 +58,11 @@ async function bootstrap() {
   });
 
   // Use Helmet
-  app.use(helmet());
+  // Use Helmet with CORS-friendly settings for media
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false, // Disable CSP for now if it interferes with media blobs or cross-subdomain resources
+  }));
 
   // Body Parser Middlewares
   app.use(express.json({ limit: '10mb' }));
