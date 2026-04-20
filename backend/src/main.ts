@@ -18,9 +18,15 @@ if (dns.setDefaultResultOrder) {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Serve static files from the uploads directory
+  // Serve static files from the uploads directory with CORS headers
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
+    setHeaders: (res) => {
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Range');
+      res.set('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
+    }
   });
 
   // Enable CORS
