@@ -12,18 +12,21 @@ export const multerConfig = {
             else if (mimetype.includes('png')) extension = '.png';
             else if (mimetype.includes('webp')) extension = '.webp';
             else if (mimetype.includes('gif')) extension = '.gif';
+            else if (mimetype.includes('mp4')) extension = '.mp4';
+            else if (mimetype.includes('webm')) extension = '.webm';
+            else if (mimetype.includes('quicktime')) extension = '.mov';
 
             const uniqueName = `${uuidv4()}${extension}`;
             callback(null, uniqueName);
         },
     }),
     fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-            return callback(new Error('Only image files are allowed!'), false);
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|mp4|webm|quicktime)$/)) {
+            return callback(new Error('Only image and video files are allowed!'), false);
         }
         callback(null, true);
     },
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
+        fileSize: 50 * 1024 * 1024, // 50MB (increased to allow videos)
     },
 };

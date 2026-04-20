@@ -107,6 +107,7 @@ model Property {
   
   // Media (stored as JSON string array)
   images          String?  // JSON array of image paths
+  videos          String?  // JSON array of video paths
   virtualTourUrl  String?
   
   // Status

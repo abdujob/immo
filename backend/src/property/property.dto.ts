@@ -46,6 +46,7 @@ export const CreatePropertySchema = z.object({
     lat: z.number().optional(),
     lng: z.number().optional(),
     virtualTourUrl: z.string().url().optional().or(z.literal('')),
+    videos: z.array(z.string()).optional(), // Will be handled in service/controller
     agencyId: z.string().uuid().optional(),
 });
 

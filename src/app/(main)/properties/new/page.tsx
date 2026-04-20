@@ -41,6 +41,7 @@ interface PropertyFormData {
     hasAirCon: boolean;
     hasGuardian: boolean;
     images: File[];
+    videos: File[];
 }
 
 const STEPS = [
@@ -92,7 +93,8 @@ export default function NewPropertyPage() {
         isFurnished: false,
         hasAirCon: false,
         hasGuardian: false,
-        images: []
+        images: [],
+        videos: []
     });
 
     const updateFormData = (field: string, value: any) => {
@@ -106,10 +108,24 @@ export default function NewPropertyPage() {
         }
     };
 
+    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            setFormData(prev => ({ ...prev, videos: [...prev.videos, ...files] }));
+        }
+    };
+
     const removeImage = (index: number) => {
         setFormData(prev => ({
             ...prev,
             images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const removeVideo = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            videos: prev.videos.filter((_, i) => i !== index)
         }));
     };
 
@@ -145,6 +161,11 @@ export default function NewPropertyPage() {
             // Add images
             formData.images.forEach((image) => {
                 submitData.append('images', image);
+            });
+
+            // Add videos
+            formData.videos.forEach((video) => {
+                submitData.append('videos', video);
             });
 
             const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -389,6 +410,45 @@ export default function NewPropertyPage() {
                                         <button
                                             onClick={() => removeImage(index)}
                                             className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="mt-8">
+                            <Label>Vidéos du bien (max. 3)</Label>
+                            <div className="mt-2">
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                        <p className="text-sm text-gray-500">Cliquez pour ajouter des vidéos</p>
+                                        <p className="text-xs text-gray-400">MP4, WebM (max. 50MB par vidéo)</p>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        multiple
+                                        accept="video/*"
+                                        onChange={handleVideoUpload}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                        {formData.videos.length > 0 && (
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                {formData.videos.map((video, index) => (
+                                    <div key={index} className="relative group h-40 bg-black rounded-lg overflow-hidden">
+                                        <video
+                                            src={URL.createObjectURL(video)}
+                                            className="w-full h-full object-cover"
+                                            controls
+                                        />
+                                        <button
+                                            onClick={() => removeVideo(index)}
+                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                         >
                                             <X className="w-4 h-4" />
                                         </button>

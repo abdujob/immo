@@ -23,6 +23,7 @@ export class PropertyService {
             data: {
                 ...data,
                 images: dto['images'] ? JSON.stringify(dto['images']) : null,
+                videos: dto['videos'] ? JSON.stringify(dto['videos']) : null,
             } as any,
             include: {
                 owner: {
@@ -191,6 +192,7 @@ export class PropertyService {
             data: {
                 ...dto,
                 images: dto['images'] ? JSON.stringify(dto['images']) : undefined,
+                videos: dto['videos'] ? JSON.stringify(dto['videos']) : undefined,
             },
             include: {
                 owner: {
@@ -361,6 +363,7 @@ export class PropertyService {
         return {
             ...property,
             images: property.images ? JSON.parse(property.images) : [],
+            videos: property.videos ? JSON.parse(property.videos) : [],
         };
     }
 }

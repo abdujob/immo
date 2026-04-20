@@ -36,6 +36,7 @@ export interface Property {
     lat?: number;
     lng?: number;
     images?: string | string[];
+    videos?: string | string[];
     virtualTourUrl?: string;
     status: string;
     featured: boolean;
@@ -454,6 +455,37 @@ export function parseImages(images?: string | string[]): string[] {
     }
 
     return ['/placeholder-property.svg'];
+}
+
+/**
+ * Parse videos — similar to parseImages
+ */
+export function parseVideos(videos?: string | string[]): string[] {
+    if (!videos) return [];
+
+    // Already an array
+    if (Array.isArray(videos)) {
+        return videos.map((vid) =>
+            vid.startsWith('/uploads') ? `${API_BASE_URL}${vid}` : vid
+        );
+    }
+
+    // JSON string
+    try {
+        const parsed = JSON.parse(videos);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((vid: string) =>
+                vid.startsWith('/uploads') ? `${API_BASE_URL}${vid}` : vid
+            );
+        }
+    } catch {
+        // Direct URL
+        if (videos.startsWith('http') || videos.startsWith('/')) {
+            return [videos.startsWith('/uploads') ? `${API_BASE_URL}${videos}` : videos];
+        }
+    }
+
+    return [];
 }
 
 /**

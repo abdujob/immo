@@ -46,12 +46,15 @@ export class PropertyController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('AGENCY_AGENT', 'ADMIN', 'INDIVIDUAL')
     @ApiBearerAuth()
-    @UseInterceptors(FileFieldsInterceptor([{ name: 'images', maxCount: 10 }], multerConfig))
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'images', maxCount: 10 },
+        { name: 'videos', maxCount: 3 }
+    ], multerConfig))
     @ApiOperation({ summary: 'Créer une nouvelle propriété' })
     create(
         @Request() req,
         @Body() body: any,
-        @UploadedFiles() files: { images?: Express.Multer.File[] }
+        @UploadedFiles() files: { images?: Express.Multer.File[], videos?: Express.Multer.File[] }
     ) {
         // Convert string booleans to actual booleans
         const parsedBody: any = {
@@ -94,6 +97,13 @@ export class PropertyController {
                 finalDto.images = files.images.map(file => `/uploads/${file.filename}`);
             } else {
                 finalDto.images = null;
+            }
+
+            // Add video paths if files exist
+            if (files?.videos && files.videos.length > 0) {
+                finalDto.videos = files.videos.map(file => `/uploads/${file.filename}`);
+            } else {
+                finalDto.videos = null;
             }
 
             return this.propertyService.create(req.user.id, finalDto);
@@ -157,13 +167,16 @@ export class PropertyController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('AGENCY_AGENT', 'ADMIN', 'INDIVIDUAL')
     @ApiBearerAuth()
-    @UseInterceptors(FileFieldsInterceptor([{ name: 'images', maxCount: 10 }], multerConfig))
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'images', maxCount: 10 },
+        { name: 'videos', maxCount: 3 }
+    ], multerConfig))
     @ApiOperation({ summary: 'Mettre à jour une propriété' })
     update(
         @Param('id') id: string,
         @Request() req,
         @Body() body: any,
-        @UploadedFiles() files: { images?: Express.Multer.File[] }
+        @UploadedFiles() files: { images?: Express.Multer.File[], videos?: Express.Multer.File[] }
     ) {
         const updateData: any = { ...body };
 
@@ -196,6 +209,23 @@ export class PropertyController {
                 finalUpdateData.images = JSON.stringify(images);
             } else if (body.existingImages && Array.isArray(body.existingImages) && body.existingImages.length === 0) {
                 finalUpdateData.images = JSON.stringify([]);
+            }
+
+            // Handle videos
+            let videos: string[] = [];
+            if (body.existingVideos) {
+                videos = Array.isArray(body.existingVideos) ? body.existingVideos : [body.existingVideos];
+            }
+
+            if (files?.videos) {
+                const newVideos = files.videos.map(file => `/uploads/${file.filename}`);
+                videos = [...videos, ...newVideos];
+            }
+
+            if (videos.length > 0 || (files?.videos && files.videos.length > 0)) {
+                finalUpdateData.videos = JSON.stringify(videos);
+            } else if (body.existingVideos && Array.isArray(body.existingVideos) && body.existingVideos.length === 0) {
+                finalUpdateData.videos = JSON.stringify([]);
             }
 
             return this.propertyService.update(

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Property, parseImages, formatPrice, submitReview, sendContact } from "@/lib/api";
+import { Property, parseImages, parseVideos, formatPrice, submitReview, sendContact } from "@/lib/api";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/lib/auth-context";
@@ -49,6 +49,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
     const [showReviewForm, setShowReviewForm] = useState(false);
 
     const propertyImages = parseImages(property.images);
+    const propertyVideos = parseVideos(property.videos);
     const isPropertyFavorite = isFavorite(property.id);
 
     const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % propertyImages.length);
@@ -340,6 +341,27 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                 <p className="text-gray-700 leading-relaxed whitespace-pre-line">{property.description}</p>
                             </CardContent>
                         </Card>
+
+                        {/* Videos */}
+                        {propertyVideos.length > 0 && (
+                            <Card>
+                                <CardContent className="p-6">
+                                    <h2 className="text-xl font-bold mb-4">Vidéos</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {propertyVideos.map((video, index) => (
+                                            <div key={index} className="aspect-video bg-black rounded-xl overflow-hidden shadow-sm">
+                                                <video
+                                                    src={video}
+                                                    className="w-full h-full"
+                                                    controls
+                                                    preload="metadata"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Reviews Section */}
                         <Card>

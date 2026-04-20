@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, ArrowRight, Check, Upload, X, Trash2 } from "lucide-react";
-import { parseImages } from "@/lib/api";
+import { parseImages, parseVideos } from "@/lib/api";
 import Image from "next/image";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
@@ -41,6 +41,8 @@ interface PropertyFormData {
     hasGuardian: boolean;
     images: File[];
     existingImages: string[];
+    videos: File[];
+    existingVideos: string[];
 }
 
 const STEPS = [
@@ -48,7 +50,7 @@ const STEPS = [
     { id: 2, title: "Localisation" },
     { id: 3, title: "Caractéristiques" },
     { id: 4, title: "Prix & Surface" },
-    { id: 5, title: "Photos" },
+    { id: 5, title: "Médias" },
     { id: 6, title: "Description" },
 ];
 
@@ -76,8 +78,10 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
         hasAirCon: false,
         hasGuardian: false,
         images: [],
-        existingImages: []
-});
+        existingImages: [],
+        videos: [],
+        existingVideos: []
+    });
 
     useEffect(() => {
         loadProperty();
@@ -120,8 +124,10 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
                     hasAirCon: property.hasAirCon,
                     hasGuardian: property.hasGuardian,
                     images: [],
-                    existingImages: existingImages
-});
+                    existingImages: existingImages,
+                    videos: [],
+                    existingVideos: parseVideos(property.videos)
+                });
             } else {
                 alert("Impossible de charger l'annonce");
                 router.push('/dashboard/properties');
@@ -145,6 +151,13 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
         }
     };
 
+    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            setFormData(prev => ({ ...prev, videos: [...prev.videos, ...files] }));
+        }
+    };
+
     const removeNewImage = (index: number) => {
         setFormData(prev => ({
             ...prev,
@@ -152,10 +165,24 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
         }));
     };
 
+    const removeNewVideo = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            videos: prev.videos.filter((_, i) => i !== index)
+        }));
+    };
+
     const removeExistingImage = (index: number) => {
         setFormData(prev => ({
             ...prev,
             existingImages: prev.existingImages.filter((_, i) => i !== index)
+        }));
+    };
+
+    const removeExistingVideo = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            existingVideos: prev.existingVideos.filter((_, i) => i !== index)
         }));
     };
 
@@ -187,13 +214,11 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
             submitData.append('hasAirCon', String(formData.hasAirCon));
             submitData.append('hasGuardian', String(formData.hasGuardian));
 
-            // Ajouter les images qui restent (URL relatives car parseImages prefixe mais on veut stocker relatif)
-            // Il faut retirer le préfixe API_BASE_URL si présent
-
+            // Ajouter les images qui restent
             formData.existingImages.forEach((img) => {
                 let relativePath = img;
-                if (img.startsWith(API_BASE_URL)) {
-                    relativePath = img.replace(API_BASE_URL, '');
+                if (img.includes('/uploads/')) {
+                    relativePath = '/uploads/' + img.split('/uploads/')[1];
                 }
                 submitData.append('existingImages', relativePath);
             });
@@ -203,8 +228,28 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
                 submitData.append('images', image);
             });
 
+            // Ajouter les vidéos qui restent
+            formData.existingVideos.forEach((vid) => {
+                let relativePath = vid;
+                if (vid.includes('/uploads/')) {
+                    relativePath = '/uploads/' + vid.split('/uploads/')[1];
+                }
+                submitData.append('existingVideos', relativePath);
+            });
+
+            // Ajouter les nouvelles vidéos
+            formData.videos.forEach((video) => {
+                submitData.append('videos', video);
+            });
+
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
             const response = await fetch(`${API_BASE_URL}/properties/${params.id}`, {
-                credentials: 'include'
+                method: 'PATCH',
+                credentials: 'include',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: submitData
             });
 
             if (response.ok) {
@@ -396,14 +441,14 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
 
             case 5:
                 return (
-                    <div className="space-y-6">
+                    <div className="space-y-10">
                         <div>
-                            <Label>Photos du bien</Label>
+                            <Label className="text-lg font-bold">Photos du bien</Label>
 
                             {/* Existing Images */}
                             {formData.existingImages.length > 0 && (
-                                <div className="mb-6">
-                                    <h4 className="text-sm font-medium mb-3">Photos actuelles</h4>
+                                <div className="mb-6 mt-4">
+                                    <h4 className="text-sm font-medium mb-3 text-gray-500">Photos actuelles</h4>
                                     <div className="grid grid-cols-3 gap-4">
                                         {formData.existingImages.map((image, index) => (
                                             <div key={`existing-${index}`} className="relative group h-32">
@@ -442,31 +487,101 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
                                     />
                                 </label>
                             </div>
+
+                            {/* New Images Preview */}
+                            {formData.images.length > 0 && (
+                                <div className="grid grid-cols-3 gap-4 mt-4">
+                                    {formData.images.map((image, index) => (
+                                        <div key={`new-${index}`} className="relative group h-32">
+                                            <img
+                                                src={URL.createObjectURL(image)}
+                                                alt={`Preview ${index + 1}`}
+                                                className="w-full h-full object-cover rounded-lg"
+                                            />
+                                            <button
+                                                onClick={() => removeNewImage(index)}
+                                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                            <div className="absolute bottom-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
+                                                Nouvelle
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {/* New Images Preview */}
-                        {formData.images.length > 0 && (
-                            <div className="grid grid-cols-3 gap-4">
-                                {formData.images.map((image, index) => (
-                                    <div key={`new-${index}`} className="relative group h-32">
-                                        <img
-                                            src={URL.createObjectURL(image)}
-                                            alt={`Preview ${index + 1}`}
-                                            className="w-full h-full object-cover rounded-lg"
-                                        />
-                                        <button
-                                            onClick={() => removeNewImage(index)}
-                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                        <div className="absolute bottom-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
-                                            Nouvelle
-                                        </div>
+                        <div className="border-t pt-8">
+                            <Label className="text-lg font-bold">Vidéos du bien (max. 3)</Label>
+                            
+                            {/* Existing Videos */}
+                            {formData.existingVideos.length > 0 && (
+                                <div className="mb-6 mt-4">
+                                    <h4 className="text-sm font-medium mb-3 text-gray-500">Vidéos actuelles</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {formData.existingVideos.map((video, index) => (
+                                            <div key={`existing-vid-${index}`} className="relative group h-40 bg-black rounded-lg overflow-hidden">
+                                                <video
+                                                    src={video}
+                                                    className="w-full h-full object-cover"
+                                                    controls
+                                                />
+                                                <button
+                                                    onClick={() => removeExistingVideo(index)}
+                                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
+                                </div>
+                            )}
+
+                            {/* New Videos Upload */}
+                            <div className="mt-2">
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                        <p className="text-sm text-gray-500">Ajouter de nouvelles vidéos</p>
+                                        <p className="text-xs text-gray-400">MP4, WebM (max. 50MB)</p>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        multiple
+                                        accept="video/*"
+                                        onChange={handleVideoUpload}
+                                    />
+                                </label>
                             </div>
-                        )}
+
+                            {/* New Videos Preview */}
+                            {formData.videos.length > 0 && (
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                    {formData.videos.map((video, index) => (
+                                        <div key={`new-vid-${index}`} className="relative group h-40 bg-black rounded-lg overflow-hidden">
+                                            <video
+                                                src={URL.createObjectURL(video)}
+                                                className="w-full h-full object-cover"
+                                                controls
+                                            />
+                                            <button
+                                                onClick={() => removeNewVideo(index)}
+                                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                            <div className="absolute bottom-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs z-10">
+                                                Nouvelle
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 );
 
