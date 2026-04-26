@@ -159,7 +159,7 @@ export class PropertyService {
         // Mask contact info if the user is not authenticated
         if (!user && property.owner) {
             property.owner.email = null as any;
-            property.owner.phone = null as any;
+            // Phone is kept public for WhatsApp contact as requested
         }
 
         // Increment views

@@ -489,10 +489,10 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                     <div className="mt-3 space-y-2 text-sm text-gray-600">
                                         <div className="flex items-center gap-2">
                                             <Phone className="w-4 h-4" />
-                                            {isAuthenticated && contactPhone ? (
+                                            {contactPhone ? (
                                                 <a href={`tel:${contactPhone}`} className="hover:text-blue-600 font-medium">{contactPhone}</a>
                                             ) : (
-                                                <span className="text-gray-400 italic">Connectez-vous pour voir le numéro</span>
+                                                <span className="text-gray-400 italic">Non renseigné</span>
                                             )}
                                         </div>
 
@@ -510,7 +510,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                 {/* Action Buttons */}
                                 {!showContactForm && !contactSent ? (
                                     <div className="space-y-3">
-                                        {isAuthenticated && contactPhone && (
+                                        {contactPhone && (
                                             <div className="grid grid-cols-2 gap-2">
                                                 <Button className="bg-blue-600 hover:bg-blue-700" asChild>
                                                     <a href={`tel:${contactPhone}`}>
