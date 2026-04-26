@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import {
     MapPin, Bed, Bath, Maximize, Car, TreePine, Waves,
     Phone, Mail, Heart, Share2, ChevronLeft, ChevronRight,
-    Loader2, CheckCircle2, Wind, Shield, Home, Star, Play
+    Loader2, CheckCircle2, Wind, Shield, Home, Star, Play, MessageCircle
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -511,12 +511,24 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
                                 {!showContactForm && !contactSent ? (
                                     <div className="space-y-3">
                                         {isAuthenticated && contactPhone && (
-                                            <Button className="w-full bg-blue-600 hover:bg-blue-700" asChild>
-                                                <a href={`tel:${contactPhone}`}>
-                                                    <Phone className="w-4 h-4 mr-2" />
-                                                    Appeler
-                                                </a>
-                                            </Button>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <Button className="bg-blue-600 hover:bg-blue-700" asChild>
+                                                    <a href={`tel:${contactPhone}`}>
+                                                        <Phone className="w-4 h-4 mr-2" />
+                                                        Appeler
+                                                    </a>
+                                                </Button>
+                                                <Button className="bg-[#25D366] hover:bg-[#128C7E] text-white" asChild>
+                                                    <a
+                                                        href={`https://wa.me/${contactPhone.replace(/\D/g, '').startsWith('221') ? contactPhone.replace(/\D/g, '') : '221' + contactPhone.replace(/\D/g, '')}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                                        WhatsApp
+                                                    </a>
+                                                </Button>
+                                            </div>
                                         )}
                                         <Button
                                             variant="outline"
