@@ -7,7 +7,7 @@ import { Heart, MapPin, Bed, Bath, Maximize, Car, TreePine, Waves } from "lucide
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { parseImages, formatPrice } from "@/lib/api";
+import { parseImages, parseVideos, formatPrice } from "@/lib/api";
 
 interface PropertyCardProps {
     property: {
@@ -26,6 +26,7 @@ interface PropertyCardProps {
         city: string;
         district?: string;
         images?: string | string[];
+        videos?: string | string[];
         featured?: boolean;
         owner: {
             firstName: string;
@@ -49,20 +50,33 @@ export function PropertyCard({ property, onFavoriteToggle, isFavorite = false }:
         return type === 'VENTE' ? 'bg-blue-600' : 'bg-green-600';
     };
 
-    const imageArray = parseImages(property.images, true);
-    const mainImage = imageArray[0];
+    const propertyImages = parseImages(property.images, false);
+    const propertyVideos = parseVideos(property.videos);
 
     return (
         <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300">
             <Link href={`/properties/${property.id}`}>
                 <div className="relative h-56 overflow-hidden">
-                    {!imageError ? (
+                    {propertyImages.length > 0 && !imageError ? (
                         <Image
-                            src={mainImage}
+                            src={propertyImages[0]}
                             alt={property.title}
                             fill
                             className="object-cover group-hover:scale-110 transition-transform duration-500"
                             onError={() => setImageError(true)}
+                        />
+                    ) : propertyVideos.length > 0 ? (
+                        <video
+                            src={propertyVideos[0]}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            muted
+                            playsInline
+                            loop
+                            onMouseEnter={(e) => e.currentTarget.play()}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.pause();
+                                e.currentTarget.currentTime = 0;
+                            }}
                         />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
