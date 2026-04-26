@@ -102,8 +102,8 @@ export default function EditPropertyPage({ params }: { params: { id: string } })
             if (response.ok) {
                 const property = await response.json();
 
-                // Parse existing images
-                const existingImages = parseImages(property.images);
+                // Parse existing images (no placeholder)
+                const existingImages = parseImages(property.images, false);
 
                 setFormData({
                     title: property.title,

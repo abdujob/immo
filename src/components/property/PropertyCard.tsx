@@ -49,7 +49,7 @@ export function PropertyCard({ property, onFavoriteToggle, isFavorite = false }:
         return type === 'VENTE' ? 'bg-blue-600' : 'bg-green-600';
     };
 
-    const imageArray = parseImages(property.images);
+    const imageArray = parseImages(property.images, true);
     const mainImage = imageArray[0];
 
     return (

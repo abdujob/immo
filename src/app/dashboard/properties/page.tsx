@@ -143,7 +143,7 @@ export default function MyPropertiesPage() {
             ) : (
                 <div className="space-y-4">
                     {properties.map((property) => {
-                        const images = parseImages(property.images);
+                        const images = parseImages(property.images, true);
                         const mainImage = images[0] || '/placeholder-property.svg';
 
                         return (

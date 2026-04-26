@@ -428,12 +428,13 @@ export async function isFavorite(propertyId: string): Promise<boolean> {
 /**
  * Parse images — accepts both string[] (backend) and JSON string (legacy)
  */
-export function parseImages(images?: string | string[]): string[] {
-    if (!images) return ['/placeholder-property.svg'];
+export function parseImages(images?: string | string[], usePlaceholder = false): string[] {
+    const placeholder = usePlaceholder ? ['/placeholder-property.svg'] : [];
+    if (!images) return placeholder;
 
     // Already an array (from backend)
     if (Array.isArray(images)) {
-        if (images.length === 0) return ['/placeholder-property.svg'];
+        if (images.length === 0) return placeholder;
         return images.map((img) =>
             img.startsWith('/uploads') ? `${API_BASE_URL}${img}` : img
         );
@@ -454,7 +455,7 @@ export function parseImages(images?: string | string[]): string[] {
         }
     }
 
-    return ['/placeholder-property.svg'];
+    return placeholder;
 }
 
 /**

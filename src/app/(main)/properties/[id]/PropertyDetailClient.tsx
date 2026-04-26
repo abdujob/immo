@@ -48,7 +48,7 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
     const [reviewLoading, setReviewLoading] = useState(false);
     const [showReviewForm, setShowReviewForm] = useState(false);
 
-    const propertyImages = parseImages(property.images);
+    const propertyImages = parseImages(property.images, false);
     const propertyVideos = parseVideos(property.videos);
     const isPropertyFavorite = isFavorite(property.id);
 
@@ -57,6 +57,11 @@ export default function PropertyDetailClient({ property, similarProperties }: Pr
         ...propertyImages.map(url => ({ type: 'image' as const, url })),
         ...propertyVideos.map(url => ({ type: 'video' as const, url }))
     ];
+
+    // If no media at all, add a placeholder
+    if (allMedia.length === 0) {
+        allMedia.push({ type: 'image', url: '/placeholder-property.svg' });
+    }
 
     const nextMedia = () => setCurrentMediaIndex((prev) => (prev + 1) % allMedia.length);
     const prevMedia = () => setCurrentMediaIndex((prev) => (prev - 1 + allMedia.length) % allMedia.length);
